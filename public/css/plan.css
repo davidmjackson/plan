@@ -1,0 +1,240 @@
+/* sprintplan app styles. Extends instrument-core.css; does not fork tokens.
+   Plum accent (G4) is defined here for now; promote --plum/--plumwash to the
+   shared instrument-core source in a suite housekeeping ticket. Amber and red
+   are reserved for capacity semantics only. */
+
+.ins[data-app="plan"] {
+  --plum: oklch(0.5 0.1 290);
+  --plumwash: oklch(0.95 0.03 290);
+  --accent: var(--plum);
+  /* Capacity-state colours (reserved; never the accent). */
+  --red: oklch(0.5 0.13 25);
+  --redwash: oklch(0.95 0.04 25);
+}
+
+.plan-page .brand .mk {
+  color: var(--plum);
+}
+
+/* App-scoped brand tint of the shared chrome (not a token fork): the band's
+   scope-trace and eyebrow carry the plum identity. */
+.plan-page .waves {
+  color: var(--plum);
+}
+
+.plan-page .band .eyebrow {
+  color: var(--plum);
+}
+
+/* --- Settings strip (Screen 4) ------------------------------------------- */
+
+.settings-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--line2);
+  background: var(--panel);
+  font-size: 14px;
+}
+
+.settings-strip.is-fresh {
+  box-shadow: inset 0 0 0 2px var(--plumwash);
+  transition: box-shadow 0.6s ease;
+}
+
+.ss-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-key {
+  color: var(--faint);
+}
+
+.ss-dot {
+  color: var(--line2);
+  padding: 0 2px;
+}
+
+.ss-arrow {
+  color: var(--plum);
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.ss-control {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+
+.ss-control:focus {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+}
+
+.ss-num {
+  width: 56px;
+  text-align: right;
+}
+
+.ss-date {
+  width: 150px;
+}
+
+.ss-derived #ss-capacity {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--plum);
+}
+
+/* --- Board: month rail + sprint stack as one aligned grid ----------------- */
+
+.board {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  column-gap: 16px;
+  row-gap: 14px;
+  align-items: stretch;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 40px 48px;
+}
+
+.rail-seg {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  border-left: 2px solid var(--plumwash);
+  border-radius: 2px;
+  padding-top: 6px;
+}
+
+.rail-seg span {
+  writing-mode: vertical-rl;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+.sprint {
+  grid-column: 2;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sprint.is-partial {
+  border-style: dashed;
+}
+
+.sprint-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sprint-name {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.sprint-dates {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.partial-tag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--soft);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.cap-pill {
+  margin-left: auto;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 6px;
+}
+
+.cap-pill.is-neutral {
+  background: var(--bone);
+  color: var(--soft);
+  border: 1px solid var(--line2);
+}
+
+.cap-pill.is-amber {
+  background: var(--amberwash);
+  color: oklch(0.5 0.12 60);
+}
+
+.cap-pill.is-red {
+  background: var(--redwash);
+  color: var(--red);
+}
+
+.sprint-body {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  color: var(--faint);
+  font-size: 13px;
+}
+
+/* --- Editable plan title -------------------------------------------------- */
+
+#plan-title:empty::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+}
+
+#plan-title:focus {
+  outline: none;
+  box-shadow: 0 2px 0 var(--plum);
+}
+
+/* --- Toast (returned-to-backlog notice) ----------------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--panel);
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px -16px oklch(0.3 0.05 240 / 0.9);
+  z-index: 20;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "plan",
+  "version": "0.1.0",
+  "description": "sprintplan.uk - a lightweight delivery-planning whiteboard",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

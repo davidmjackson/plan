@@ -20,6 +20,22 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-11 - Brief 1: settings strip, sprint generation, capacity maths (first code)
+
+- **Task brief**: docs/brief1.md - first vertical slice. Settings strip drives sprint generation, rendering sprint containers with capacity pills and the month rail. No cards/DnD/exports/backlog. Pure maths + rail + regeneration built and unit-tested first; UI wired second; single store with discrete named actions.
+- **AI contribution**:
+  - **Propose step** (per RoE): inspected the sibling suite repos to ground the stack instead of inventing one - found vanilla JS + Express + `node --test` + zod/pino, dragula already vendored, theme synced from `/var/www/suite/shared/theme`. Proposed store shape, action list, function signatures, file layout. Verified all five worked cases tie out *before* coding, surfacing one interpretation the brief never states: sprint days are counted **inclusively** (sprint 7 = 9 days, not 8, is the only reading that makes `round(18x9/14)=12` true). Flagged it rather than silently bake it.
+  - **Stack review** (director asked): recommended keeping the suite stack; added two cheap insurances - `@ts-check` + JSDoc on the logic modules, and representing calendar dates as `YYYY-MM-DD` strings/integers (never JS `Date`) to dodge timezone/DST bugs in the danger zone. Both approved.
+  - **Build (TDD, red-green-refactor throughout)**: `date.js` (10 tests), `plan-maths.js` (10), `month-rail.js` (4), `regenerate.js` (5), `store.js`+`actions.js` (11). 40 tests, all asserting real values from the brief. Then the view layer (`render.js`, `main.js`), `index.html`, `plan.css`, minimal `server.js`. Synced the Instrument theme via the blessed `sync-theme.mjs`; added `#glyph-plan` (inline) and the plum accent (`plan.css`) locally per the "don't touch the suite mid-brief" decision.
+  - **Verification**: typecheck gate clean; 40/40 unit tests green; headless Chromium run reproduced every worked case live (defaults -> 7 sprints/cap 18, sprint 7 `0/12` partial; vel 30 -> sprint 7 `0/17`; 1-month -> 3 sprints, sprint 3 `0/5` partial) with zero console errors.
+- **Human contribution**: Approved the proposed architecture; ruled on the stack question (keep vanilla suite stack, add `@ts-check` + string-dates); approved `server.js` for parity and keeping `--plum`/`#glyph-plan` local for now.
+- **Friction**:
+  - `tsc` reads `tsconfig.json`, not the `jsconfig.json` I first wrote (jsconfig is editor-only) - the gate silently printed help with exit 0 until corrected. Scoped the typecheck `include` to `public/js/**` so the gate needs zero extra `@types` deps (tests are covered by *running*, `server.js` is trivial node glue).
+  - Playwright's package is CommonJS; the smoke script's named `import { chromium }` failed and needed the default-import form.
+- **Verdict**: Test-first on the date/capacity maths was the right call exactly where the RoE says the risk lives - every worked case passed on first implementation because the interpretation work happened in the tests, not the code. The inclusive-day question would have been a latent off-by-one bug under tests-after. Grounding the stack in the real sibling repos beat proposing from memory.
+- **Open housekeeping** (logged, not silently actioned): promote `#glyph-plan` and `--plum`/`--plumwash` to the shared `instrument-core.css`/`glyphs.svg`; register `plan` as a SURFACE in the theme `manifest.mjs` and add the drift-check test; resume/new-plan prompt (Screen 3) deferred to a later brief (this slice restores the saved board silently on load).
+- **Time**: ~1 session.
+
 ### 2026-06-11 - v1 screen designs and the G1-G8 rulings
 
 - **Task brief**: Design the v1 screens (board view, card editor with dependency picker, resume/new prompt, inline setup, export dialog) consistent with suite branding; grill where the docs underdetermine the design
