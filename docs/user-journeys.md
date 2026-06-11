@@ -1,6 +1,6 @@
 # sprintplan.uk - MVP User Journeys (v1.0)
 
-**Status**: Drafted with AI, pending owner sign-off
+**Status**: Signed off by owner, 11 June 2026. All journey-level questions resolved.
 **Owner**: [You]
 **Companion to**: sprintplan-mvp-spec.md (v0.4)
 **Date**: 11 June 2026
@@ -25,7 +25,7 @@
 5. Month rail renders on the left, computed from sprint dates (majority-of-days rule); a partial final sprint is visibly flagged
 6. Backlog side panel sits empty, inviting the first epic
 
-**Open question for screen visuals** (recommendation, pending sign-off): render the board instantly with sensible defaults (3 months, 2-week sprints, velocity 20, buffer 10%) and edit the values inline, rather than a blocking setup wizard. The 15-minute target argues against a wizard.
+**Decision (11 Jun 2026)**: the board renders instantly with editable defaults (3 months, 2-week sprints, velocity 20, buffer 10%); setup values are edited inline on the board. No blocking wizard, in service of the 15-minute target.
 
 ## Journey 2 - Build the backlog (~5 min)
 
@@ -44,7 +44,7 @@
 
 ## Journey 4 - Mark dependencies
 
-1. From either story in a pair: mark "this blocks..." or "this needs..." (one link type stored as a pair, Jira-style blocks / is blocked by)
+1. From either story's **card editor**: mark "this blocks..." or "this needs..." (one link type stored as a pair, Jira-style blocks / is blocked by). The card editor is the single home for dependency controls in v1; no hover actions.
 2. The dependency control opens a picker to choose the paired story; one prerequisite can block several stories (1-to-many, separate pairs)
 3. Both cards gain a shared badge (D1, D2...)
 4. Same sprint: blocked story shows a visual tether to its prerequisite; cards are never auto-moved
@@ -63,7 +63,7 @@
 2. Board exports/imports as a JSON file to move machines or archive a plan
 3. On a later visit with a saved board present, the facilitator returns to their plan
 
-**Open question for screen visuals** (recommendation, pending sign-off): show a lightweight "Resume last board / Start new plan" choice rather than silent resume, so last quarter's plan never opens unannounced on a shared screen.
+**Decision (11 Jun 2026)**: on opening with a saved board present, a lightweight "Resume last board / Start new plan" prompt is shown. No silent resume, so last quarter's plan never opens unannounced on a shared screen.
 
 ---
 
@@ -75,8 +75,8 @@
 - **Dependency model**: either-side creation, picker-based pairing, 1-to-many, shared badges, tether without auto-move, on-demand connectors, red violations (spec v0.4, P0 #5)
 - **Stack order**: facilitation signal only; recorded dependencies are the only ordering truth
 
-## Open questions carried to the screen visuals thread
+## Decisions closed at sign-off (11 Jun 2026)
 
-1. First run: instant board with editable defaults (recommended) vs setup wizard
-2. Saved board on open: Resume / New plan prompt (recommended) vs silent resume
-3. Where the dependency control lives on the card UI (card edit view vs hover action)
+1. **First run**: instant board with editable defaults, no wizard
+2. **Saved board on open**: Resume / New plan prompt, no silent resume
+3. **Dependency control**: lives in the card editor only; arrows, badges and tethers render on the board, but the link is created and removed in the card editor

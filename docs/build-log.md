@@ -20,6 +20,15 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-11 - v1 screen designs and the G1-G8 rulings
+
+- **Task brief**: Design the v1 screens (board view, card editor with dependency picker, resume/new prompt, inline setup, export dialog) consistent with suite branding; grill where the docs underdetermine the design
+- **AI contribution**: Pulled live Instrument theme tokens from the retrospective repo rather than designing from brand memory; produced inline mockups of the board view and card editor; surfaced eight design gaps (G1-G8), including one the board literally cannot render without (no plan start date anywhere in the spec) and a capacity-honesty gap on partial final sprints; drafted docs/v1-screen-designs.md, the spec v0.5 errata, and this entry
+- **Human contribution**: Ruled all eight in one pass, accepting the recommendations: start date defaulting to next Monday; prorated partial-sprint capacity; index-identity regeneration with displaced stories returned to backlog, never deleted; new plum accent for data-app="plan" keeping amber/red reserved for capacity semantics; Fibonacci chips plus free entry, confirmed consistent with sprintpoker's deck; optional plan title; dependency picker open to backlog stories with violations evaluated only when both sides are scheduled; board save/load kept separate from report export
+- **Friction**: The missing start date survived two review passes (spec v0.3 to v0.4 and journey sign-off) because both described the month rail as "computed from sprint dates" without ever defining the anchor. Screen design forced the question; reviews of prose did not. Also: the theme-manifest.txt in the retrospective repo is stale (lists Fraunces/Inter, actual theme is Bricolage/Hanken), worth a suite housekeeping ticket
+- **Verdict**: Designing against the real theme file beat designing from memory; the grill format (gap plus recommendation each) closed eight rulings in a single reply. Two forced P0 additions (start date, title) were caught and logged under the scope rule instead of sliding in silently
+- **Time**: ~1 session
+
 ### 2026-06-11 - User journeys and board layout direction
 
 - **Task brief**: Map the MVP user journeys visually (Lucid) and pressure-test the board layout against PI Program Board inspiration images

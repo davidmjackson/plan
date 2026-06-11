@@ -1,6 +1,6 @@
-# sprintplan.uk - MVP Specification (v0.4)
+# sprintplan.uk - MVP Specification (v0.5)
 
-**Status**: Decisions locked, user journeys mapped, ready for build planning
+**Status**: Decisions locked, user journeys mapped, v1 screens designed (docs/v1-screen-designs.md), ready for build briefs
 **Owner**: [You]
 **Type**: Free showcase app / AI-Directed Engineering training project
 **Date**: June 2026
@@ -49,7 +49,7 @@ Scrum Master / Delivery Manager / team lead facilitating quarterly or monthly pl
 
 | # | Requirement | Acceptance criteria (abridged) |
 |---|---|---|
-| 1 | Plan setup: duration (1-3 months), sprint length (1-4 wks, default 2), velocity, buffer % | Given setup is complete, the board renders the correct number of sprint containers, each showing adjusted capacity = velocity x (1 - buffer%) |
+| 1 | Plan setup: start date (default next Monday), duration (1-3 months), sprint length (1-4 wks, default 2), velocity, buffer %, optional plan title | Given setup is complete, the board renders the correct number of sprint containers dated from the start date, each showing adjusted capacity = velocity x (1 - buffer%); a partial final sprint shows prorated capacity. The title, when set, appears on the board header and all exports |
 | 2 | Epic and story cards (title, summary, points) with epic > story grouping | Cards can be created, edited, deleted; stories visually grouped under their epic in the backlog panel |
 | 3 | Drag and drop: backlog to sprint, sprint to sprint, sprint to backlog | Card moves update sprint totals instantly; no orphaned state after any move |
 | 4 | Capacity logic per sprint | Total <= capacity: neutral. Within 10% over: amber. More than 10% over: red. Thresholds visible on the container. Over-capacity sprints show a non-blocking warning that discourages the "stretch goal" rationalisation (e.g. "This sprint is over committed. Relabelling it a stretch goal does not add capacity."). The tool never blocks the user; it flags and records |
@@ -93,12 +93,13 @@ This is a showcase/training project, so metrics are weighted to learning and usa
 
 ## Resolved Decisions (was Open Questions)
 
-1. **Estimation unit**: story points only in v1. No days mode.
-2. **Sprint length**: 1-4 weeks, default 2 weeks. Plan duration 1-3 months. Maximum flexibility by design: companies run unusual sprint lengths for niche workstreams (e.g. release cycles in the DoD spawning UAT fixes inside the sprint window). The tool never blocks a timing combination. Sprint count = ceiling of plan weeks / sprint weeks; a partial final sprint is flagged visibly, not hidden. The tool's opinion lives in capacity warnings and the report, not in restricting how teams set their clock.
+1. **Estimation unit**: story points only in v1. No days mode. Input via Fibonacci chips (1, 2, 3, 5, 8, 13, 21) plus free positive-integer entry, consistent with sprintpoker's deck.
+2. **Sprint length**: 1-4 weeks, default 2 weeks. Plan duration 1-3 months. Maximum flexibility by design: companies run unusual sprint lengths for niche workstreams (e.g. release cycles in the DoD spawning UAT fixes inside the sprint window). The tool never blocks a timing combination. Sprint count = ceiling of plan weeks / sprint weeks; a partial final sprint is flagged visibly, not hidden. A partial final sprint's capacity is prorated: adjusted capacity x (partial days / full sprint days), rounded to the nearest whole point, minimum 1; full capacity on a part-sprint would be exactly the dishonesty this tool exists to prevent. The tool's opinion lives in capacity warnings and the report, not in restricting how teams set their clock.
 3. **Export formats**: markdown summary, printable HTML, and CSV (all three in v1; shared data template, three renderers).
 4. **Branding**: full suite branding at launch.
 5. **Board layout: vertical time.** Months > sprints > stories, time runs top to bottom (matches the Jira backlog-view mental model the target user lives in). Sprint containers stack vertically with capacity status in the header; backlog is a side panel. Months render as a computed **visual rail**, not a data container: a sprint is assigned to the month holding the majority of its days, and straddling sprints are possible by design (1-4 week sprints make strict month containment impossible). The month rail is a deliberate, small addition to P0 accepted under the scope rule. PI-board imagery (Aha!, program boards) informs visual grammar only: sticky cards, dependency connectors, red for violations. No objectives row, confidence votes, milestone/event row, or team lanes in v1 (milestone row parked at P1 consideration).
 6. **Stack order is a facilitation signal only.** Facilitators can freely reorder stories inside a sprint to signal "do this first" to the room. Order never affects totals, capacity maths, warnings, or the export. Recorded dependencies (decision in P0 #5) are the only ordering truth the tool acts on.
+7. **Settings changes never destroy data.** Editing setup values regenerates sprint containers in place: sprints keep identity by index; stories in removed sprints return to the top of the backlog with a visible notice; sprint length changes re-date containers but placements persist by index; velocity/buffer changes only recompute capacity status. No settings change deletes a story or epic (the zero-data-loss bar's hardest test).
 
 ## Timeline and Phasing
 
@@ -110,5 +111,6 @@ This is a showcase/training project, so metrics are weighted to learning and usa
 
 ## Change Log
 
+- **v0.5 (11 Jun 2026)**: Screen design errata (see docs/v1-screen-designs.md, rulings G1-G8). P0 #1 gains a plan start date (default next Monday) and an optional plan title, both forced additions discovered at screen design. Partial final sprint capacity is prorated (resolved decision 2). Points input fixed as Fibonacci chips plus free entry (resolved decision 1). New resolved decision 7: settings changes never destroy data.
 - **v0.4 (11 Jun 2026)**: User journeys mapped (see docs/user-journeys.md and linked Lucid documents). P0 #5 dependency model expanded: either-side creation, 1-to-many, shared badges, same-sprint tether without auto-move, on-demand cross-sprint connectors, red violations in board and export. New resolved decisions 5 and 6: vertical-time board layout with majority-rule month rail; stack order as facilitation signal only.
 - **v0.3**: Decisions locked: points-only estimation, 1-4 week sprints, three export formats, suite branding.
