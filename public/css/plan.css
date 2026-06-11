@@ -101,15 +101,23 @@
 
 /* --- Board: month rail + sprint stack as one aligned grid ----------------- */
 
+.workspace {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 26px 40px 48px;
+}
+
 .board {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 48px 1fr;
   column-gap: 16px;
   row-gap: 14px;
   align-items: stretch;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 26px 40px 48px;
 }
 
 .rail-seg {
@@ -221,6 +229,303 @@
 #plan-title:focus {
   outline: none;
   box-shadow: 0 2px 0 var(--plum);
+}
+
+/* --- Epic colour palette (G4) --------------------------------------------
+   Keys map to oklch here; the store holds only the key. App-local for now,
+   promotable to instrument-core. None of these are amber/red (reserved). */
+
+.plan-page [data-epic-colour="plum"] { --epic: oklch(0.5 0.1 290); }
+.plan-page [data-epic-colour="violet"] { --epic: oklch(0.5 0.1 265); }
+.plan-page [data-epic-colour="indigo"] { --epic: oklch(0.52 0.1 240); }
+.plan-page [data-epic-colour="teal"] { --epic: oklch(0.55 0.09 206); }
+.plan-page [data-epic-colour="cyan"] { --epic: oklch(0.58 0.09 190); }
+.plan-page [data-epic-colour="green"] { --epic: oklch(0.52 0.09 162); }
+.plan-page [data-epic-colour="moss"] { --epic: oklch(0.55 0.09 140); }
+.plan-page [data-epic-colour="magenta"] { --epic: oklch(0.52 0.11 320); }
+
+.epic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--epic, var(--faint));
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* --- Backlog panel -------------------------------------------------------- */
+
+.backlog {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bl-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.bl-empty {
+  text-align: center;
+  padding: 28px 12px;
+  color: var(--faint);
+}
+
+.bl-empty-msg {
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.bl-empty-sub {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.bl-group {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.bl-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bl-chevron {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--soft);
+  font-size: 12px;
+  padding: 2px;
+  line-height: 1;
+}
+
+.epic-title {
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.epic-title-none {
+  color: var(--soft);
+  font-style: italic;
+  cursor: default;
+}
+
+.bl-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.bl-stories {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0 2px 22px;
+}
+
+.bl-story {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bone);
+  cursor: pointer;
+}
+
+.bl-story:hover {
+  border-color: var(--plum);
+}
+
+.bl-story-title {
+  font-size: 13px;
+}
+
+.bl-story-pts {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.bl-add-story {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--line2);
+  border-radius: 6px;
+  color: var(--soft);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.bl-add-story:hover {
+  border-color: var(--plum);
+  color: var(--plum);
+}
+
+/* --- Modal (card + epic editors) ------------------------------------------ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: oklch(0.3 0.02 250 / 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 24px;
+}
+
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px 26px;
+  box-shadow: 0 30px 70px -50px oklch(0.3 0.05 240 / 0.8);
+}
+
+.modal-heading {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-err {
+  font-size: 12px;
+  color: var(--red);
+}
+
+.epic-select-row {
+  display: flex;
+  gap: 8px;
+}
+
+.epic-select-row .input {
+  flex: 1;
+}
+
+.new-epic-wrap {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* A class with display:flex would otherwise beat the [hidden] UA rule. */
+.new-epic-wrap[hidden] {
+  display: none;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  min-width: 34px;
+  padding: 6px 0;
+  text-align: center;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  background: var(--bone);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.chip.is-selected {
+  background: var(--plumwash);
+  border-color: var(--plum);
+  color: var(--plum);
+}
+
+.points-input {
+  margin-top: 8px;
+  width: 80px;
+  text-align: right;
+}
+
+.colour-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.colour-choice {
+  width: 22px;
+  height: 22px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.colour-choice.is-selected {
+  border-color: var(--ink);
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.modal-footer-right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.modal-guard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+}
+
+.modal-guard-msg {
+  font-size: 13px;
+  margin-right: auto;
 }
 
 /* --- Toast (returned-to-backlog notice) ----------------------------------- */

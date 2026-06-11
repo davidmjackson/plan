@@ -16,6 +16,9 @@ import {
 } from "./actions.js";
 import { nextMonday } from "./date.js";
 import { render } from "./render.js";
+import { toggleCollapsed } from "./backlog.js";
+import { openCardEditor } from "./card-editor.js";
+import { openEpicEditor } from "./epic-editor.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -75,6 +78,33 @@ on("ss-velocity", "change", (v) => {
 on("ss-buffer", "change", (v) => {
   const n = Math.min(99, Math.max(0, Math.round(Number(v))));
   if (Number.isFinite(n)) store.dispatch(setBufferPct(n));
+});
+
+// Backlog panel: one delegated listener; rendered nodes carry data-act.
+const backlogEl = document.getElementById("backlog");
+backlogEl?.addEventListener("click", (e) => {
+  const target = e.target instanceof Element ? e.target.closest("[data-act]") : null;
+  if (!(target instanceof HTMLElement)) return;
+  switch (target.dataset.act) {
+    case "add-epic":
+      openEpicEditor(store, null);
+      break;
+    case "edit-epic":
+      openEpicEditor(store, target.dataset.epic ?? null);
+      break;
+    case "add-story":
+      openCardEditor(store, { epicId: target.dataset.epic ?? null });
+      break;
+    case "edit-story":
+      openCardEditor(store, { storyId: target.dataset.story });
+      break;
+    case "toggle-epic":
+      if (target.dataset.epic) {
+        toggleCollapsed(target.dataset.epic);
+        render(store.getState()); // collapse is view state; re-render manually
+      }
+      break;
+  }
 });
 
 // Plan title: editable h1 in the band (G6). Commit on blur.

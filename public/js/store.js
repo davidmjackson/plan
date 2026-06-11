@@ -9,17 +9,21 @@
 import { ActionTypes } from "./actions.js";
 import { generateSprints } from "./plan-maths.js";
 import { regenerate } from "./regenerate.js";
+import { PALETTE } from "./epic-palette.js";
 
 /**
  * @typedef {import("./regenerate.js").PlacedSprint} PlacedSprint
+ *
+ * @typedef {{ id: string, title: string, colourKey: string }} Epic
+ * @typedef {{ id: string, title: string, summary: string, points: number, epicId: string | null }} Story
  *
  * @typedef {Object} PlanState
  * @property {{ title: string | null, schemaVersion: number }} meta
  * @property {import("./plan-maths.js").PlanSettings} settings
  * @property {PlacedSprint[]} sprints
  * @property {string[]} backlog
- * @property {Record<string, object>} epics
- * @property {Record<string, object>} stories
+ * @property {Record<string, Epic>} epics
+ * @property {Record<string, Story>} stories
  * @property {string[]} lastReturnedStoryIds  transient: drives the "returned to backlog" toast
  */
 
@@ -62,6 +66,70 @@ function applySettings(state, patch) {
 }
 
 /**
+ * Remove a story id from whichever array holds it (backlog or one sprint).
+ * Returns new backlog + sprints; does not touch the stories map.
+ * @param {PlanState} state
+ * @param {string} id
+ */
+function removeIdFromArrays(state, id) {
+  return {
+    backlog: state.backlog.filter((sid) => sid !== id),
+    sprints: state.sprints.map((sp) =>
+      sp.placedStoryIds.includes(id)
+        ? { ...sp, placedStoryIds: sp.placedStoryIds.filter((sid) => sid !== id) }
+        : sp,
+    ),
+  };
+}
+
+/**
+ * DELETE_STORY: atomically remove the story from the map and its holding array.
+ * @param {PlanState} state
+ * @param {string} id
+ * @returns {PlanState}
+ */
+function deleteStory(state, id) {
+  const { [id]: _removed, ...stories } = state.stories;
+  return { ...state, stories, ...removeIdFromArrays(state, id), lastReturnedStoryIds: [] };
+}
+
+/**
+ * DELETE_EPIC: 'reparent' sets children to epicId null (zero deleted);
+ * 'delete' removes children from the map AND every array. Atomic either way.
+ * @param {PlanState} state
+ * @param {{ id: string, mode: "reparent" | "delete" }} payload
+ * @returns {PlanState}
+ */
+function deleteEpic(state, { id, mode }) {
+  const { [id]: _removedEpic, ...epics } = state.epics;
+
+  if (mode === "reparent") {
+    /** @type {Record<string, Story>} */
+    const stories = {};
+    for (const [sid, st] of Object.entries(state.stories)) {
+      stories[sid] = st.epicId === id ? { ...st, epicId: null } : st;
+    }
+    return { ...state, epics, stories, lastReturnedStoryIds: [] };
+  }
+
+  // mode === "delete": remove every child story from the map and all arrays.
+  const childIds = new Set(
+    Object.values(state.stories).filter((st) => st.epicId === id).map((st) => st.id),
+  );
+  /** @type {Record<string, Story>} */
+  const stories = {};
+  for (const [sid, st] of Object.entries(state.stories)) {
+    if (!childIds.has(sid)) stories[sid] = st;
+  }
+  const backlog = state.backlog.filter((sid) => !childIds.has(sid));
+  const sprints = state.sprints.map((sp) => ({
+    ...sp,
+    placedStoryIds: sp.placedStoryIds.filter((sid) => !childIds.has(sid)),
+  }));
+  return { ...state, epics, stories, backlog, sprints, lastReturnedStoryIds: [] };
+}
+
+/**
  * Pure reducer. Total over the known action set; throws on anything else so a
  * typo'd action surfaces immediately rather than silently no-op'ing.
  * @param {PlanState} state
@@ -86,6 +154,48 @@ export function reduce(state, action) {
       return createInitialState(action.payload);
     case ActionTypes.LOAD_PLAN:
       return action.payload;
+
+    // --- Brief 2: epics and stories ---------------------------------------
+    case ActionTypes.ADD_EPIC: {
+      const { id, title } = action.payload;
+      const colourKey = PALETTE[Object.keys(state.epics).length % PALETTE.length];
+      return {
+        ...state,
+        epics: { ...state.epics, [id]: { id, title, colourKey } },
+        lastReturnedStoryIds: [],
+      };
+    }
+    case ActionTypes.EDIT_EPIC: {
+      const { id, ...patch } = action.payload;
+      return {
+        ...state,
+        epics: { ...state.epics, [id]: { ...state.epics[id], ...patch } },
+        lastReturnedStoryIds: [],
+      };
+    }
+    case ActionTypes.DELETE_EPIC:
+      return deleteEpic(state, action.payload);
+
+    case ActionTypes.ADD_STORY: {
+      const { id, title, summary, points, epicId } = action.payload;
+      return {
+        ...state,
+        stories: { ...state.stories, [id]: { id, title, summary, points, epicId } },
+        backlog: [...state.backlog, id], // append to the END (top is the G3 return slot)
+        lastReturnedStoryIds: [],
+      };
+    }
+    case ActionTypes.EDIT_STORY: {
+      const { id, title, summary, points, epicId } = action.payload;
+      return {
+        ...state,
+        stories: { ...state.stories, [id]: { ...state.stories[id], title, summary, points, epicId } },
+        lastReturnedStoryIds: [],
+      };
+    }
+    case ActionTypes.DELETE_STORY:
+      return deleteStory(state, action.payload.id);
+
     default:
       throw new Error(`unknown action: ${action.type}`);
   }

@@ -7,6 +7,7 @@
 
 import { sprintCapacity, pillState, adjustedCapacity } from "./plan-maths.js";
 import { assignSprintsToMonths } from "./month-rail.js";
+import { renderBacklog } from "./backlog.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -131,4 +132,5 @@ export function render(state) {
   renderSettingsStrip(state);
   renderTitle(state);
   renderBoard(state);
+  renderBacklog(state);
 }

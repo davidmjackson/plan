@@ -1,0 +1,98 @@
+// @ts-check
+/**
+ * Backlog panel view. Renders purely from the backlog selectors; collapse state
+ * is VIEW state kept here (not in the store). Click targets carry data-act /
+ * data-epic / data-story attributes; main.js owns a single delegated listener.
+ */
+
+import { el } from "./dom.js";
+import { backlogGroups, epicSummary } from "./backlog-selectors.js";
+
+/** Collapsed epic ids — view-only, survives re-render. @type {Set<string>} */
+const collapsed = new Set();
+
+/** @param {string} epicId */
+export function toggleCollapsed(epicId) {
+  if (collapsed.has(epicId)) collapsed.delete(epicId);
+  else collapsed.add(epicId);
+}
+
+/**
+ * @param {{ id: string, title: string, summary: string, points: number, epicId: string | null }} story
+ */
+function storyRow(story) {
+  const row = el("div", "bl-story");
+  row.dataset.act = "edit-story";
+  row.dataset.story = story.id;
+  row.append(el("span", "bl-story-title", story.title));
+  row.append(el("span", "bl-story-pts mono", String(story.points)));
+  return row;
+}
+
+/**
+ * @param {import("./store.js").PlanState} state
+ */
+export function renderBacklog(state) {
+  const panel = document.getElementById("backlog");
+  if (!panel) return;
+  panel.replaceChildren();
+
+  const head = el("div", "bl-head");
+  head.append(el("span", "bl-title", "Backlog"));
+  const addEpicBtn = el("button", "btn btn-pri btn-sm", "+ Epic");
+  addEpicBtn.dataset.act = "add-epic";
+  head.append(addEpicBtn);
+  panel.append(head);
+
+  const groups = backlogGroups(state);
+  if (groups.length === 0) {
+    const empty = el("div", "bl-empty");
+    empty.append(el("p", "bl-empty-msg", "No epics yet."));
+    empty.append(el("p", "bl-empty-sub", "Create your first epic to start building the backlog."));
+    panel.append(empty);
+    return;
+  }
+
+  for (const group of groups) {
+    const epic = group.epic;
+    const key = epic ? epic.id : "__none__";
+    const isCollapsed = collapsed.has(key);
+
+    const section = el("section", "bl-group");
+    const groupHead = el("div", "bl-group-head");
+
+    const chevron = el("button", "bl-chevron", isCollapsed ? "▸" : "▾");
+    chevron.dataset.act = "toggle-epic";
+    chevron.dataset.epic = key;
+    groupHead.append(chevron);
+
+    if (epic) {
+      const dot = el("span", "epic-dot");
+      dot.dataset.epicColour = epic.colourKey;
+      groupHead.append(dot);
+      const title = el("span", "epic-title", epic.title);
+      title.dataset.act = "edit-epic";
+      title.dataset.epic = epic.id;
+      groupHead.append(title);
+      const sum = epicSummary(state, epic.id);
+      groupHead.append(el("span", "bl-meta mono", `${sum.storyCount} stories · ${sum.unplacedPoints} pts`));
+    } else {
+      groupHead.append(el("span", "epic-title epic-title-none", "No epic"));
+      const pts = group.stories.reduce((t, s) => t + s.points, 0);
+      groupHead.append(el("span", "bl-meta mono", `${group.stories.length} stories · ${pts} pts`));
+    }
+    section.append(groupHead);
+
+    if (!isCollapsed) {
+      const body = el("div", "bl-stories");
+      for (const story of group.stories) body.append(storyRow(story));
+      const addStory = el("button", "bl-add-story", "+ Story");
+      addStory.dataset.act = "add-story";
+      if (epic) addStory.dataset.epic = epic.id;
+      body.append(addStory);
+      section.append(body);
+    }
+
+    panel.append(section);
+  }
+}
