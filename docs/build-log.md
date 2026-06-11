@@ -20,6 +20,15 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-11 - User journeys and board layout direction
+
+- **Task brief**: Map the MVP user journeys visually (Lucid) and pressure-test the board layout against PI Program Board inspiration images
+- **AI contribution**: Built two Lucid documents (E2E facilitator journey map with a layout A/B; vertical-time board sketch); challenged the SAFe-flavoured imagery against the spec's non-goals; surfaced three design holes in the proposed dependency model (month containment maths, checkbox needs a paired target, auto-grouping vs manual stack order); drafted user-journeys.md, spec v0.4 amendments, and this entry
+- **Human contribution**: Chose vertical-time layout (months > sprints > stories) against the AI's column recommendation, on the Jira backlog-view familiarity argument; confirmed inspiration images as visual grammar only; accepted majority-rule month rail, either-side dependency creation, 1-to-many pairs, and tether-without-auto-move
+- **Friction**: AI initially recommended horizontal time from the inspiration images and reversed when the Jira mental-model argument landed; first Lucid tool call failed on a missed approval prompt before connecting cleanly; Lucid imports leave "Text" placeholders on empty container shapes (cosmetic)
+- **Verdict**: Rendering the layout argument as a visual A/B in Lucid settled it faster than prose; the grilling converted a one-line dependency idea into a buildable interaction model before any code
+- **Time**: ~1 session
+
 ### 2026-06-11 - Project inception (pre-code)
 
 - **Task brief**: Evaluate the original PI Planning concept, reframe, spec the MVP, define AIDE rules of engagement

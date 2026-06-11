@@ -1,6 +1,6 @@
-# sprintplan.uk - MVP Specification (v0.3)
+# sprintplan.uk - MVP Specification (v0.4)
 
-**Status**: Decisions locked, ready for build planning
+**Status**: Decisions locked, user journeys mapped, ready for build planning
 **Owner**: [You]
 **Type**: Free showcase app / AI-Directed Engineering training project
 **Date**: June 2026
@@ -53,7 +53,7 @@ Scrum Master / Delivery Manager / team lead facilitating quarterly or monthly pl
 | 2 | Epic and story cards (title, summary, points) with epic > story grouping | Cards can be created, edited, deleted; stories visually grouped under their epic in the backlog panel |
 | 3 | Drag and drop: backlog to sprint, sprint to sprint, sprint to backlog | Card moves update sprint totals instantly; no orphaned state after any move |
 | 4 | Capacity logic per sprint | Total <= capacity: neutral. Within 10% over: amber. More than 10% over: red. Thresholds visible on the container. Over-capacity sprints show a non-blocking warning that discourages the "stretch goal" rationalisation (e.g. "This sprint is over committed. Relabelling it a stretch goal does not add capacity."). The tool never blocks the user; it flags and records |
-| 5 | Simple story-to-story dependency link | When story B depends on story A and B is placed in an earlier sprint than A, both cards show a warning flag |
+| 5 | Story-to-story dependency link ("do this first" / "blocked by") | One link type stored as a pair, creatable from either side: mark a story as blocking another, or as needing another (Jira-style blocks / is blocked by). Ticking the dependency control opens a picker to choose the paired story. One prerequisite can block multiple stories (1-to-many, rendered as separate pairs). Each pair shares a visible badge on both cards (D1, D2...). Same sprint: blocked story shows a visual tether to its prerequisite; cards are never auto-moved. Cross sprint: badges always visible, connector line drawn on hover/select only. Violation (blocked story scheduled in an earlier sprint than its prerequisite): both cards and the connector turn red, and the violation is listed in the export's warnings section |
 | 6 | Plan summary export: markdown, printable HTML, and CSV | One click produces a clean summary in the chosen format: sprints, stories, points, capacity status, dependency warnings. Includes a dedicated **over-commitment section** listing every sprint over capacity, by how much, so the risk is on the record and visible to stakeholders. CSV is flat (one row per story) for spreadsheet/Jira-friendly reuse |
 | 7 | Local persistence + file export/import | Board state survives browser refresh; plan can be exported/imported as JSON |
 
@@ -97,6 +97,8 @@ This is a showcase/training project, so metrics are weighted to learning and usa
 2. **Sprint length**: 1-4 weeks, default 2 weeks. Plan duration 1-3 months. Maximum flexibility by design: companies run unusual sprint lengths for niche workstreams (e.g. release cycles in the DoD spawning UAT fixes inside the sprint window). The tool never blocks a timing combination. Sprint count = ceiling of plan weeks / sprint weeks; a partial final sprint is flagged visibly, not hidden. The tool's opinion lives in capacity warnings and the report, not in restricting how teams set their clock.
 3. **Export formats**: markdown summary, printable HTML, and CSV (all three in v1; shared data template, three renderers).
 4. **Branding**: full suite branding at launch.
+5. **Board layout: vertical time.** Months > sprints > stories, time runs top to bottom (matches the Jira backlog-view mental model the target user lives in). Sprint containers stack vertically with capacity status in the header; backlog is a side panel. Months render as a computed **visual rail**, not a data container: a sprint is assigned to the month holding the majority of its days, and straddling sprints are possible by design (1-4 week sprints make strict month containment impossible). The month rail is a deliberate, small addition to P0 accepted under the scope rule. PI-board imagery (Aha!, program boards) informs visual grammar only: sticky cards, dependency connectors, red for violations. No objectives row, confidence votes, milestone/event row, or team lanes in v1 (milestone row parked at P1 consideration).
+6. **Stack order is a facilitation signal only.** Facilitators can freely reorder stories inside a sprint to signal "do this first" to the room. Order never affects totals, capacity maths, warnings, or the export. Recorded dependencies (decision in P0 #5) are the only ordering truth the tool acts on.
 
 ## Timeline and Phasing
 
@@ -105,3 +107,8 @@ This is a showcase/training project, so metrics are weighted to learning and usa
 - **Phase 3 (only on traction)**: accounts, cloud saves, paid tier
 
 **Scope rule**: any addition to P0 must displace something from P0 or extend the timeline explicitly. The parking lot for good ideas is the P1/P2 lists, not the sprint.
+
+## Change Log
+
+- **v0.4 (11 Jun 2026)**: User journeys mapped (see docs/user-journeys.md and linked Lucid documents). P0 #5 dependency model expanded: either-side creation, 1-to-many, shared badges, same-sprint tether without auto-move, on-demand cross-sprint connectors, red violations in board and export. New resolved decisions 5 and 6: vertical-time board layout with majority-rule month rail; stack order as facilitation signal only.
+- **v0.3**: Decisions locked: points-only estimation, 1-4 week sprints, three export formats, suite branding.
