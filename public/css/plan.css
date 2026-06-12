@@ -26,6 +26,23 @@
   color: var(--plum);
 }
 
+/* --- Board file control (Screen 5, G8) -----------------------------------
+   The top-bar Save / load buttons reuse the suite .btn chrome but take the plum
+   accent on hover and focus (G4: plum is the app identity). No capacity colours
+   here — amber/red mean capacity and nothing else. */
+.tbacts #tb-export:hover,
+.tbacts #tb-import:hover {
+  border-color: var(--plum);
+  color: var(--plum);
+}
+
+.tbacts #tb-export:focus-visible,
+.tbacts #tb-import:focus-visible {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+}
+
 /* --- Settings strip (Screen 4) ------------------------------------------- */
 
 .settings-strip {
