@@ -5,10 +5,11 @@
  * plan-maths / month-rail for every number it shows.
  */
 
-import { sprintCapacity, pillState, adjustedCapacity } from "./plan-maths.js";
+import { sprintCapacity, pillState, adjustedCapacity, overBy } from "./plan-maths.js";
 import { assignSprintsToMonths } from "./month-rail.js";
 import { renderBacklog, storyCard } from "./backlog.js";
 import { sprintPlacedPoints } from "./board-selectors.js";
+import { bannerEl, isBannerDismissed } from "./banner.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -117,6 +118,15 @@ export function renderBoard(state) {
     head.appendChild(pill);
 
     el.appendChild(head);
+
+    // Honesty banner (Brief 4): between head and body, only when the sprint is
+    // over capacity (overBy > 0, i.e. the pill is amber/red) and not dismissed
+    // this session. Visibility derives from the same figures as the pill, so the
+    // two can never disagree. Neutral/under/empty sprints render none.
+    const by = overBy(placed, capacity);
+    if (by > 0 && !isBannerDismissed(sprint.index)) {
+      el.appendChild(bannerEl(sprint.index, /** @type {"amber"|"red"} */ (state2), by));
+    }
 
     // Sprint body: the dragula drop target. Renders its placed cards in
     // placedStoryIds order (each with its epic colour dot); an empty sprint

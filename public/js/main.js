@@ -20,6 +20,7 @@ import { toggleCollapsed } from "./backlog.js";
 import { openCardEditor } from "./card-editor.js";
 import { openEpicEditor } from "./epic-editor.js";
 import { setupDrag, isDragging } from "./drag.js";
+import { dismissBanner, clearDismissedBanners } from "./banner.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -75,16 +76,28 @@ function on(id, evt, handler) {
   if (el) el.addEventListener(evt, () => handler(/** @type {HTMLInputElement} */ (el).value));
 }
 
-on("ss-start", "change", (v) => v && store.dispatch(setStartDate(v)));
-on("ss-duration", "change", (v) => store.dispatch(setDurationMonths(Number(v))));
-on("ss-sprint-weeks", "change", (v) => store.dispatch(setSprintWeeks(Number(v))));
+// Settings changes are the only paths that regenerate the board. They clear the
+// dismissed-banner set first: capacity just changed, so every still-over banner
+// must re-arm (this closes the stale-index hole — a re-grown sprint must not
+// inherit an old dismissal). View state never enters the store; this just clears
+// a view-local Set before the regenerating dispatch. MOVE_STORY and others do
+// NOT clear it, preserving the per-session dismiss promise.
+/** @param {{ type: string, payload?: any }} action */
+function dispatchSettings(action) {
+  clearDismissedBanners();
+  store.dispatch(action);
+}
+
+on("ss-start", "change", (v) => v && dispatchSettings(setStartDate(v)));
+on("ss-duration", "change", (v) => dispatchSettings(setDurationMonths(Number(v))));
+on("ss-sprint-weeks", "change", (v) => dispatchSettings(setSprintWeeks(Number(v))));
 on("ss-velocity", "change", (v) => {
   const n = Math.max(1, Math.round(Number(v)));
-  if (Number.isFinite(n)) store.dispatch(setVelocity(n));
+  if (Number.isFinite(n)) dispatchSettings(setVelocity(n));
 });
 on("ss-buffer", "change", (v) => {
   const n = Math.min(99, Math.max(0, Math.round(Number(v))));
-  if (Number.isFinite(n)) store.dispatch(setBufferPct(n));
+  if (Number.isFinite(n)) dispatchSettings(setBufferPct(n));
 });
 
 // Backlog panel: one delegated listener; rendered nodes carry data-act.
@@ -115,14 +128,23 @@ backlogEl?.addEventListener("click", (e) => {
   }
 });
 
-// Board: placed cards open the card editor on click (consistency with the
-// backlog). One delegated listener; a click that trails a drag is swallowed.
+// Board: one delegated listener. Placed cards open the card editor; the honesty
+// banner's × dismisses that sprint's banner for the session. A click that trails
+// a drag is swallowed. The dismiss button is a sibling of the sprint body (not
+// inside a placed card), so it can never match the edit-story branch.
 const boardEl = document.getElementById("board");
 boardEl?.addEventListener("click", (e) => {
   if (isDragging()) return;
-  const target = e.target instanceof Element ? e.target.closest("[data-act='edit-story']") : null;
-  if (target instanceof HTMLElement && target.dataset.story) {
-    openCardEditor(store, { storyId: target.dataset.story });
+  const target = e.target instanceof Element ? e.target.closest("[data-act]") : null;
+  if (!(target instanceof HTMLElement)) return;
+  switch (target.dataset.act) {
+    case "edit-story":
+      if (target.dataset.story) openCardEditor(store, { storyId: target.dataset.story });
+      break;
+    case "dismiss-banner":
+      dismissBanner(Number(target.dataset.sprintIndex));
+      paint(store.getState()); // dismiss is view state; re-render + re-wire drag
+      break;
   }
 });
 

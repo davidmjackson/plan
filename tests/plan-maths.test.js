@@ -6,6 +6,7 @@ import {
   proratedCapacity,
   sprintCapacity,
   pillState,
+  overBy,
   generateSprints,
 } from "../public/js/plan-maths.js";
 
@@ -42,6 +43,35 @@ test("pillState: neutral at/under capacity, amber within 10% over, red beyond", 
 test("pillState: a 10%-over total is amber (boundary is inclusive)", () => {
   assert.equal(pillState(11, 10), "amber"); // exactly 10% over
   assert.equal(pillState(12, 10), "red"); // 20% over
+});
+
+// --- Brief 4: overBy (the banner overshoot N and its visibility predicate) ---
+
+// Asserted cases 1-6: real overshoot values across the pill states.
+test("overBy = max(0, placed - capacity), the overshoot N", () => {
+  assert.equal(overBy(18, 18), 0); // case 3: exact capacity, clean
+  assert.equal(overBy(10, 18), 0); // case 4: under capacity, clean
+  assert.equal(overBy(19, 18), 1); // cases 1 & 2: amber-over by 1
+  assert.equal(overBy(24, 18), 6); // case 1: red-over by 6
+  assert.equal(overBy(12, 9), 3); // case 5: prorated partial over by 3
+});
+
+test("overBy is never negative (renderable unguarded)", () => {
+  assert.equal(overBy(5, 18), 0); // case 6: -13 clamped to 0
+});
+
+// The keystone invariant: the banner can never disagree with the pill, because
+// "is over" (overBy > 0) is provably the same predicate as "pill not neutral".
+test("overBy > 0 is identical to pillState !== neutral across a range", () => {
+  for (let capacity = 1; capacity <= 20; capacity++) {
+    for (let placed = 0; placed <= 40; placed++) {
+      assert.equal(
+        overBy(placed, capacity) > 0,
+        pillState(placed, capacity) !== "neutral",
+        `mismatch at placed=${placed}, capacity=${capacity}`,
+      );
+    }
+  }
 });
 
 // Brief worked case 2: defaults
