@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sprintplan</title>
+    <link rel="stylesheet" href="/css/instrument-core.css" />
+    <link rel="stylesheet" href="/vendor/dragula/dragula.min.css" />
+    <link rel="stylesheet" href="/css/plan.css" />
+  </head>
+  <body class="ins plan-page" data-app="plan">
+    <!-- #glyph-plan lives here for now; promote to the shared glyphs.svg sprite
+         in a suite housekeeping ticket (see build log). -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <symbol id="glyph-plan" viewBox="0 0 24 24" fill="none">
+        <g fill="currentColor">
+          <rect x="3" y="4" width="3" height="16" rx="1.5" opacity="0.5" />
+          <rect x="8.5" y="5" width="12.5" height="4.2" rx="1.4" />
+          <rect x="8.5" y="10.9" width="12.5" height="4.2" rx="1.4" opacity="0.62" />
+          <rect x="8.5" y="16.8" width="9" height="4.2" rx="1.4" />
+        </g>
+      </symbol>
+    </svg>
+
+    <header class="topbar">
+      <span class="topbar-lead">
+        <p class="brand">
+          <svg class="mk" width="22" height="22" aria-hidden="true">
+            <use href="/illos/glyphs.svg#glyph-plan" />
+          </svg>
+          <span>sprintplan</span>
+        </p>
+      </span>
+      <div class="tbacts">
+        <a class="btn btn-ghost btn-sm" data-suite-return hidden>Return to Suite</a>
+      </div>
+    </header>
+
+    <div class="band">
+      <div class="waves"></div>
+      <div class="band-in">
+        <div class="eyebrow">Delivery plan</div>
+        <h1 id="plan-title" contenteditable="true" spellcheck="false"
+            data-placeholder="Untitled plan"></h1>
+        <p class="sub">What can the team realistically deliver, sprint by sprint?</p>
+      </div>
+    </div>
+
+    <!-- Screen 4: inline settings strip. Every value drives sprint generation;
+         derived capacity is read-only. -->
+    <section class="settings-strip" id="settings-strip" aria-label="Plan settings">
+      <span class="ss-seg">
+        <span class="ss-key micro">starts</span>
+        <input type="date" id="ss-start" class="ss-control ss-date mono" />
+      </span>
+      <span class="ss-dot" aria-hidden="true">·</span>
+      <span class="ss-seg">
+        <select id="ss-duration" class="ss-control mono" aria-label="Plan duration">
+          <option value="1">1 month</option>
+          <option value="2">2 months</option>
+          <option value="3">3 months</option>
+        </select>
+      </span>
+      <span class="ss-dot" aria-hidden="true">·</span>
+      <span class="ss-seg">
+        <select id="ss-sprint-weeks" class="ss-control mono" aria-label="Sprint length">
+          <option value="1">1-week</option>
+          <option value="2">2-week</option>
+          <option value="3">3-week</option>
+          <option value="4">4-week</option>
+        </select>
+        <span class="ss-key micro">sprints</span>
+      </span>
+      <span class="ss-dot" aria-hidden="true">·</span>
+      <span class="ss-seg">
+        <span class="ss-key micro">velocity</span>
+        <input type="number" id="ss-velocity" class="ss-control ss-num mono" min="1" step="1" />
+      </span>
+      <span class="ss-dot" aria-hidden="true">·</span>
+      <span class="ss-seg">
+        <span class="ss-key micro">buffer</span>
+        <input type="number" id="ss-buffer" class="ss-control ss-num mono" min="0" max="99" step="1" />
+        <span class="ss-key micro">%</span>
+      </span>
+      <span class="ss-arrow" aria-hidden="true">&rarr;</span>
+      <span class="ss-seg ss-derived">
+        <span class="ss-key micro">capacity</span>
+        <span id="ss-capacity" class="mono">&mdash;</span>
+        <span class="ss-key micro">pts</span>
+      </span>
+    </section>
+
+    <div class="workspace">
+      <main class="board" id="board"></main>
+      <aside class="backlog" id="backlog" aria-label="Backlog"></aside>
+    </div>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+
+    <!-- dragula is a vendored global; load it before the modules so window.dragula
+         exists when main.js wires the board (Brief 3). -->
+    <script src="/vendor/dragula/dragula.min.js"></script>
+    <script type="module" src="/js/oscilloscope.js"></script>
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>
