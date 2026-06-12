@@ -76,6 +76,19 @@ export function pillState(placed, capacity) {
 }
 
 /**
+ * Overshoot in points: how far a sprint's placed total exceeds its capacity, or
+ * 0 when at/under. This is the honesty banner's N AND its visibility predicate —
+ * `overBy(p, c) > 0` is provably identical to `pillState(p, c) !== "neutral"`,
+ * so the banner can never disagree with the pill. Never negative.
+ * @param {number} placed
+ * @param {number} capacity
+ * @returns {number}
+ */
+export function overBy(placed, capacity) {
+  return Math.max(0, placed - capacity);
+}
+
+/**
  * Generate sprint containers from plan settings. Sprints are laid back-to-back
  * from the start date, each (sprintWeeks * 7) calendar days. Plan end =
  * startDate + durationMonths (day-of-month overflow clamped). The final sprint
