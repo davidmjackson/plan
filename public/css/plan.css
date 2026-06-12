@@ -208,15 +208,45 @@
   color: var(--red);
 }
 
+/* Populated sprint body: a vertical stack of placed cards. */
 .sprint-body {
   min-height: 40px;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 7px;
+}
+
+/* Empty sprint keeps the muted dashed "Drop stories here" drop affordance. */
+.sprint-body.is-empty {
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  padding: 0;
   border: 1px dashed var(--line);
-  border-radius: 7px;
   color: var(--faint);
   font-size: 13px;
+}
+
+/* --- Drag affordances (Brief 3) ------------------------------------------ */
+
+/* Cards are draggable; the grabbed source dims while its mirror follows. */
+.sprint-body .bl-story,
+.bl-stories .bl-story {
+  cursor: grab;
+}
+
+.gu-transit {
+  opacity: 0.4;
+}
+
+/* dragula's flying clone: plum focus ring, matches the drag accent (G4). */
+.gu-mirror.bl-story {
+  cursor: grabbing;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+  list-style: none;
 }
 
 /* --- Editable plan title -------------------------------------------------- */

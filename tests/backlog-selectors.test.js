@@ -53,9 +53,9 @@ test("backlogGroups omits the No-epic group when there are no unparented backlog
   );
 });
 
-test("epicSummary counts all the epic's stories but only sums points of those still in the backlog", () => {
+test("epicSummary counts and sums UNPLACED stories only (placed stories leave the tally)", () => {
   const s = fixture();
-  assert.deepEqual(epicSummary(s, "E1"), { storyCount: 3, unplacedPoints: 8 }); // s1+s2 in backlog; s5 placed
-  assert.deepEqual(epicSummary(s, "E2"), { storyCount: 1, unplacedPoints: 8 });
-  assert.deepEqual(epicSummary(s, "E3"), { storyCount: 0, unplacedPoints: 0 });
+  assert.deepEqual(epicSummary(s, "E1"), { unplacedCount: 2, unplacedPoints: 8 }); // s1+s2 in backlog; s5 placed, excluded
+  assert.deepEqual(epicSummary(s, "E2"), { unplacedCount: 1, unplacedPoints: 8 });
+  assert.deepEqual(epicSummary(s, "E3"), { unplacedCount: 0, unplacedPoints: 0 });
 });

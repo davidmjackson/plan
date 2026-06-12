@@ -17,13 +17,27 @@ export function toggleCollapsed(epicId) {
   else collapsed.add(epicId);
 }
 
+/** Sentinel epicId for unparented stories, used by the drag accepts() check. */
+export const NO_EPIC = "__none__";
+
 /**
+ * One story card — the single card visual, shared by the backlog panel (no dot;
+ * the group header carries the colour) and the sprint board (pass `epic` to
+ * prepend the colour dot, since placed cards stand alone). Carries the data
+ * attributes the delegated click and the dragula accepts()/drop wiring read.
  * @param {{ id: string, title: string, summary: string, points: number, epicId: string | null }} story
+ * @param {{ id: string, title: string, colourKey: string } | null} [epic]
  */
-function storyRow(story) {
+export function storyCard(story, epic) {
   const row = el("div", "bl-story");
   row.dataset.act = "edit-story";
   row.dataset.story = story.id;
+  row.dataset.epicId = story.epicId ?? NO_EPIC;
+  if (epic) {
+    const dot = el("span", "epic-dot");
+    dot.dataset.epicColour = epic.colourKey;
+    row.append(dot);
+  }
   row.append(el("span", "bl-story-title", story.title));
   row.append(el("span", "bl-story-pts mono", String(story.points)));
   return row;
@@ -75,7 +89,7 @@ export function renderBacklog(state) {
       title.dataset.epic = epic.id;
       groupHead.append(title);
       const sum = epicSummary(state, epic.id);
-      groupHead.append(el("span", "bl-meta mono", `${sum.storyCount} stories · ${sum.unplacedPoints} pts`));
+      groupHead.append(el("span", "bl-meta mono", `${sum.unplacedCount} stories · ${sum.unplacedPoints} pts`));
     } else {
       groupHead.append(el("span", "epic-title epic-title-none", "No epic"));
       const pts = group.stories.reduce((t, s) => t + s.points, 0);
@@ -85,7 +99,11 @@ export function renderBacklog(state) {
 
     if (!isCollapsed) {
       const body = el("div", "bl-stories");
-      for (const story of group.stories) body.append(storyRow(story));
+      // This container is a dragula drop target; accepts() refuses any card
+      // whose epicId differs from this group's, so a drag never reparents.
+      body.dataset.drop = "backlog";
+      body.dataset.epicId = epic ? epic.id : NO_EPIC;
+      for (const story of group.stories) body.append(storyCard(story));
       const addStory = el("button", "bl-add-story", "+ Story");
       addStory.dataset.act = "add-story";
       if (epic) addStory.dataset.epic = epic.id;

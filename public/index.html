@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>sprintplan</title>
     <link rel="stylesheet" href="/css/instrument-core.css" />
+    <link rel="stylesheet" href="/vendor/dragula/dragula.min.css" />
     <link rel="stylesheet" href="/css/plan.css" />
   </head>
   <body class="ins plan-page" data-app="plan">
@@ -96,6 +97,9 @@
 
     <div class="toast" id="toast" role="status" hidden></div>
 
+    <!-- dragula is a vendored global; load it before the modules so window.dragula
+         exists when main.js wires the board (Brief 3). -->
+    <script src="/vendor/dragula/dragula.min.js"></script>
     <script type="module" src="/js/oscilloscope.js"></script>
     <script type="module" src="/js/main.js"></script>
   </body>

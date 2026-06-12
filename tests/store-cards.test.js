@@ -45,7 +45,7 @@ test("ADD_STORY adds to the map, appends to the END of backlog, groups under its
   assert.deepEqual(s.backlog, ["top", "sNew"]); // appended to the end, not the top
   const e1 = backlogGroups(s).find((g) => g.epic?.id === "E1");
   assert.deepEqual(e1.stories.map((x) => x.id), ["sNew"]);
-  assert.deepEqual(epicSummary(s, "E1"), { storyCount: 1, unplacedPoints: 5 });
+  assert.deepEqual(epicSummary(s, "E1"), { unplacedCount: 1, unplacedPoints: 5 });
 });
 
 // --- Case 3: ADD_STORY with no epic ----------------------------------------

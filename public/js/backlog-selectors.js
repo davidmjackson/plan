@@ -31,25 +31,33 @@ export function backlogGroups(state) {
     stories: backlogStories.filter((s) => s.epicId === /** @type {Epic} */ (epic).id),
   }));
 
-  const noEpic = backlogStories.filter((s) => s.epicId == null);
-  if (noEpic.length > 0) groups.push({ epic: null, stories: noEpic });
+  // The No-epic group persists as a drop target while ANY unparented story
+  // exists (placed or not), so a placed loose card can be dragged home; it
+  // still lists only the unparented stories currently in the backlog.
+  const hasUnparented = Object.values(state.stories).some((s) => s.epicId == null);
+  if (hasUnparented) {
+    groups.push({ epic: null, stories: backlogStories.filter((s) => s.epicId == null) });
+  }
 
   return groups;
 }
 
 /**
+ * Per-epic tallies for the backlog group row. Both figures count UNPLACED
+ * stories only (those still in backlog[]) so the row meta matches the rows
+ * visible beneath it — placed stories live in their sprint, not the panel.
  * @param {PlanState} state
  * @param {string} epicId
- * @returns {{ storyCount: number, unplacedPoints: number }}
+ * @returns {{ unplacedCount: number, unplacedPoints: number }}
  */
 export function epicSummary(state, epicId) {
-  const inBacklog = new Set(state.backlog);
-  let storyCount = 0;
+  let unplacedCount = 0;
   let unplacedPoints = 0;
-  for (const story of Object.values(state.stories)) {
-    if (story.epicId !== epicId) continue;
-    storyCount += 1;
-    if (inBacklog.has(story.id)) unplacedPoints += story.points;
+  for (const id of state.backlog) {
+    const story = state.stories[id];
+    if (!story || story.epicId !== epicId) continue;
+    unplacedCount += 1;
+    unplacedPoints += story.points;
   }
-  return { storyCount, unplacedPoints };
+  return { unplacedCount, unplacedPoints };
 }

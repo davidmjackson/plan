@@ -19,6 +19,7 @@ import { render } from "./render.js";
 import { toggleCollapsed } from "./backlog.js";
 import { openCardEditor } from "./card-editor.js";
 import { openEpicEditor } from "./epic-editor.js";
+import { setupDrag, isDragging } from "./drag.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -56,9 +57,15 @@ store.subscribe((state) => {
   }
 });
 
-// Render on every change, then once now for the initial paint.
-store.subscribe(render);
-render(store.getState());
+// Render on every change, then (re)wire dragula over the fresh DOM. render()
+// rebuilds the board/backlog via replaceChildren, so the drake must be rebuilt
+// after each paint. Run once now for the initial paint.
+function paint(/** @type {import("./store.js").PlanState} */ state) {
+  render(state);
+  setupDrag(store);
+}
+store.subscribe(paint);
+paint(store.getState());
 
 // --- Wire the settings strip ------------------------------------------------
 
@@ -83,6 +90,7 @@ on("ss-buffer", "change", (v) => {
 // Backlog panel: one delegated listener; rendered nodes carry data-act.
 const backlogEl = document.getElementById("backlog");
 backlogEl?.addEventListener("click", (e) => {
+  if (isDragging()) return; // swallow the click that trails a drag
   const target = e.target instanceof Element ? e.target.closest("[data-act]") : null;
   if (!(target instanceof HTMLElement)) return;
   switch (target.dataset.act) {
@@ -101,9 +109,20 @@ backlogEl?.addEventListener("click", (e) => {
     case "toggle-epic":
       if (target.dataset.epic) {
         toggleCollapsed(target.dataset.epic);
-        render(store.getState()); // collapse is view state; re-render manually
+        paint(store.getState()); // collapse is view state; re-render + re-wire drag
       }
       break;
+  }
+});
+
+// Board: placed cards open the card editor on click (consistency with the
+// backlog). One delegated listener; a click that trails a drag is swallowed.
+const boardEl = document.getElementById("board");
+boardEl?.addEventListener("click", (e) => {
+  if (isDragging()) return;
+  const target = e.target instanceof Element ? e.target.closest("[data-act='edit-story']") : null;
+  if (target instanceof HTMLElement && target.dataset.story) {
+    openCardEditor(store, { storyId: target.dataset.story });
   }
 });
 

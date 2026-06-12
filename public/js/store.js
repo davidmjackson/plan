@@ -83,6 +83,47 @@ function removeIdFromArrays(state, id) {
 }
 
 /**
+ * Insert `id` into `ids` before `beforeId`; append when beforeId is null or not
+ * present. `id` is assumed already absent from `ids` (remove-then-insert).
+ * @param {string[]} ids
+ * @param {string} id
+ * @param {string | null} beforeId
+ * @returns {string[]}
+ */
+function insertBefore(ids, id, beforeId) {
+  const at = beforeId == null ? -1 : ids.indexOf(beforeId);
+  if (at < 0) return [...ids, id];
+  return [...ids.slice(0, at), id, ...ids.slice(at)];
+}
+
+/**
+ * MOVE_STORY: move one story to a target array at the position before `beforeId`.
+ * Remove-then-insert reusing removeIdFromArrays, so the id is conserved: it sits
+ * in exactly one array at all times, never duplicated, never lost. A same-array
+ * move is a valid reorder. epicId and points are untouched (the stories map is
+ * not read or written). Defensive and pure: an unknown story id or an
+ * out-of-range sprint index returns state unchanged.
+ * @param {PlanState} state
+ * @param {{ storyId: string, target: import("./actions.js").MoveTarget, beforeId: string | null }} payload
+ * @returns {PlanState}
+ */
+function moveStory(state, { storyId, target, beforeId }) {
+  if (!(storyId in state.stories)) return state;
+  if (target.kind === "sprint" && (target.index < 0 || target.index >= state.sprints.length)) {
+    return state;
+  }
+
+  const { backlog, sprints } = removeIdFromArrays(state, storyId);
+  if (target.kind === "backlog") {
+    return { ...state, sprints, backlog: insertBefore(backlog, storyId, beforeId), lastReturnedStoryIds: [] };
+  }
+  const placed = sprints.map((sp, i) =>
+    i === target.index ? { ...sp, placedStoryIds: insertBefore(sp.placedStoryIds, storyId, beforeId) } : sp,
+  );
+  return { ...state, backlog, sprints: placed, lastReturnedStoryIds: [] };
+}
+
+/**
  * DELETE_STORY: atomically remove the story from the map and its holding array.
  * @param {PlanState} state
  * @param {string} id
@@ -195,6 +236,10 @@ export function reduce(state, action) {
     }
     case ActionTypes.DELETE_STORY:
       return deleteStory(state, action.payload.id);
+
+    // --- Brief 3: placement -----------------------------------------------
+    case ActionTypes.MOVE_STORY:
+      return moveStory(state, action.payload);
 
     default:
       throw new Error(`unknown action: ${action.type}`);

@@ -24,6 +24,8 @@ export const ActionTypes = Object.freeze({
   ADD_STORY: "ADD_STORY",
   EDIT_STORY: "EDIT_STORY",
   DELETE_STORY: "DELETE_STORY",
+  // Brief 3 — drag-and-drop placement
+  MOVE_STORY: "MOVE_STORY",
 });
 
 /** @param {string} date */
@@ -59,3 +61,11 @@ export const addStory = (fields) => ({ type: ActionTypes.ADD_STORY, payload: { i
 export const editStory = (fields) => ({ type: ActionTypes.EDIT_STORY, payload: fields });
 /** @param {{ id: string }} payload */
 export const deleteStory = (payload) => ({ type: ActionTypes.DELETE_STORY, payload });
+
+// --- Brief 3: placement. A move is remove-then-insert; the id is conserved.
+// `target` is the destination array (backlog, or a sprint by index); `beforeId`
+// is the story id to insert before, or null to append (dragula's drop sibling).
+
+/** @typedef {{ kind: "backlog" } | { kind: "sprint", index: number }} MoveTarget */
+/** @param {{ storyId: string, target: MoveTarget, beforeId: string | null }} payload */
+export const moveStory = (payload) => ({ type: ActionTypes.MOVE_STORY, payload });

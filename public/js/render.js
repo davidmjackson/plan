@@ -7,7 +7,8 @@
 
 import { sprintCapacity, pillState, adjustedCapacity } from "./plan-maths.js";
 import { assignSprintsToMonths } from "./month-rail.js";
-import { renderBacklog } from "./backlog.js";
+import { renderBacklog, storyCard } from "./backlog.js";
+import { sprintPlacedPoints } from "./board-selectors.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -81,7 +82,9 @@ export function renderBoard(state) {
   // Sprint containers (column 2), one per row.
   for (const sprint of sprints) {
     const capacity = sprintCapacity(sprint, settings);
-    const placed = sprint.placedStoryIds.length;
+    // PLACED IS POINTS, never count: the pill reads the sum of the placed
+    // stories' points (sprintPlacedPoints), which is what pillState expects.
+    const placed = sprintPlacedPoints(state, sprint.index);
     const state2 = pillState(placed, capacity);
 
     const el = document.createElement("div");
@@ -115,9 +118,24 @@ export function renderBoard(state) {
 
     el.appendChild(head);
 
+    // Sprint body: the dragula drop target. Renders its placed cards in
+    // placedStoryIds order (each with its epic colour dot); an empty sprint
+    // keeps the muted "Drop stories here" affordance.
     const body = document.createElement("div");
-    body.className = "sprint-body";
-    body.textContent = "Drop stories here";
+    body.dataset.drop = "sprint";
+    body.dataset.sprintIndex = String(sprint.index);
+    if (sprint.placedStoryIds.length === 0) {
+      body.className = "sprint-body is-empty";
+      body.textContent = "Drop stories here";
+    } else {
+      body.className = "sprint-body";
+      for (const id of sprint.placedStoryIds) {
+        const story = state.stories[id];
+        if (!story) continue;
+        const epic = story.epicId ? state.epics[story.epicId] ?? null : null;
+        body.appendChild(storyCard(story, epic));
+      }
+    }
     el.appendChild(body);
 
     board.appendChild(el);
