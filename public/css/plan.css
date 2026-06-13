@@ -49,6 +49,58 @@
   box-shadow: 0 0 0 3px var(--plumwash);
 }
 
+/* --- Report export menu (Screen 5, G8) -----------------------------------
+   The plan-summary export (Brief 9, P0 #6) is its OWN control, distinct from
+   the board .json Save/Import above (a thin divider separates the two groups).
+   A native <details> dropdown — no JS for open/close — styled with the same
+   plum accent and focus ring as every plan control. */
+.export-menu {
+  position: relative;
+  display: inline-block;
+}
+.export-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.export-menu > summary:hover,
+.export-menu-list .btn:hover {
+  border-color: var(--plum);
+  color: var(--plum);
+}
+.export-menu > summary:focus-visible,
+.export-menu-list .btn:focus-visible {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+}
+.export-menu-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: max-content;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--plumwash);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+.export-menu-list .btn {
+  justify-content: flex-start;
+}
+.tbacts-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 2px;
+  background: var(--plumwash);
+}
+
 /* --- Settings strip (Screen 4) ------------------------------------------- */
 
 .settings-strip {

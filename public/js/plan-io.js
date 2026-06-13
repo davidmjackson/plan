@@ -70,6 +70,10 @@ export function validatePlan(plan) {
   if (!Array.isArray(plan.deps)) return { ok: false, reason: `missing or invalid key: deps` };
   const pairSeen = new Set();
   for (const d of plan.deps) {
+    // R8 (Brief 9): guard the element shape before reading its fields, so a
+    // hand-edited `deps: [null]` fails cleanly here like every other boundary
+    // failure instead of throwing on `d.blockerId`.
+    if (!isObject(d)) return { ok: false, reason: "a dependency element is not an object" };
     if (d.blockerId === d.blockedId) {
       return { ok: false, reason: `dependency "${d.id}" links a story to itself` };
     }

@@ -18,6 +18,7 @@ import {
 } from "./actions.js";
 import { nextMonday } from "./date.js";
 import { validatePlan, migratePlan, exportPlan, extractPlan } from "./plan-io.js";
+import { reportModel, toMarkdown, toHtml, toCsv } from "./report.js";
 import { render } from "./render.js";
 import { toggleCollapsed } from "./backlog.js";
 import { openCardEditor } from "./card-editor.js";
@@ -255,10 +256,15 @@ function slugify(/** @type {string | null} */ title) {
   return (title ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "untitled-plan";
 }
 
-/** Trigger a browser download of `text` as `filename`. The thin glue both the
- * board export and the invalid-save rescue share (Brief 6 flagged refactor). */
-function downloadText(/** @type {string} */ text, /** @type {string} */ filename) {
-  const blob = new Blob([text], { type: "application/json" });
+/** Trigger a browser download of `text` as `filename`. The thin glue the board
+ * export, the invalid-save rescue, AND the report export (Brief 9) share; `mime`
+ * defaults to JSON for the board callers, the report passes its own type. */
+function downloadText(
+  /** @type {string} */ text,
+  /** @type {string} */ filename,
+  /** @type {string} */ mime = "application/json",
+) {
+  const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -284,6 +290,31 @@ function downloadRaw(/** @type {string} */ text) {
 }
 
 document.getElementById("tb-export")?.addEventListener("click", () => downloadBoard(store.getState()));
+
+// --- Report export (Brief 9, P0 #6, ruling G8): its OWN control, distinct from
+// the board .json Save/Import above. A PURE READ (R2) — it runs reportModel over
+// the live state, renders the chosen format, and downloads it. It dispatches
+// nothing and never touches the sprintplan:board autosave envelope.
+const REPORT_FORMATS = {
+  md: { render: toMarkdown, ext: "md", mime: "text/markdown" },
+  html: { render: toHtml, ext: "html", mime: "text/html" },
+  csv: { render: toCsv, ext: "csv", mime: "text/csv" },
+};
+
+function exportReport(/** @type {string | null} */ format) {
+  const spec = format ? REPORT_FORMATS[/** @type {keyof typeof REPORT_FORMATS} */ (format)] : undefined;
+  if (!spec) return;
+  const state = store.getState();
+  const text = spec.render(reportModel(state));
+  downloadText(text, `${slugify(state.meta.title)}-summary-${todayISO()}.${spec.ext}`, spec.mime);
+}
+
+document.querySelectorAll("[data-export]").forEach((btn) =>
+  btn.addEventListener("click", () => {
+    exportReport(btn.getAttribute("data-export"));
+    btn.closest("details")?.removeAttribute("open"); // collapse the menu after a pick
+  }),
+);
 
 /** @type {{ close: () => void } | null} The open load-time prompt, if any. A
  * successful import closes it; mid-session (no prompt) it stays null. */
