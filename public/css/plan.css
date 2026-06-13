@@ -413,8 +413,27 @@
   color: var(--faint);
 }
 
+/* Discoverability: the title is an inline-editable single-line field, not a
+   static heading. A text caret + a faint plum underline on hover signal that
+   it's clickable; white-space:nowrap keeps it one line (Enter commits, it never
+   wraps to a second row). */
+#plan-title {
+  cursor: text;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+  transition: box-shadow 0.12s ease;
+}
+
+#plan-title:hover {
+  box-shadow: 0 2px 0 color-mix(in oklab, var(--plum) 38%, transparent);
+}
+
 #plan-title:focus {
   outline: none;
+  text-overflow: clip;
   box-shadow: 0 2px 0 var(--plum);
 }
 

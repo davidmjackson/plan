@@ -26,6 +26,7 @@ import { openEpicEditor } from "./epic-editor.js";
 import { setupDrag, isDragging } from "./drag.js";
 import { dismissBanner, clearDismissedBanners } from "./banner.js";
 import { openResumePrompt, openInvalidPrompt } from "./resume-prompt.js";
+import { singleLineTitle } from "./validate.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -217,11 +218,24 @@ boardEl?.addEventListener("click", (e) => {
   }
 });
 
-// Plan title: editable h1 in the band (G6). Commit on blur.
+// Plan title: editable h1 in the band (G6). A single-line field — Enter
+// commits (blur) rather than inserting a newline, and a multi-line paste is
+// flattened to one line. Commit on blur, normalised via singleLineTitle.
 const titleEl = document.getElementById("plan-title");
 if (titleEl) {
+  titleEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      titleEl.blur();
+    }
+  });
+  titleEl.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const text = singleLineTitle(e.clipboardData?.getData("text") ?? "");
+    document.execCommand("insertText", false, text);
+  });
   titleEl.addEventListener("blur", () => {
-    store.dispatch(setPlanTitle((titleEl.textContent ?? "").trim()));
+    store.dispatch(setPlanTitle(singleLineTitle(titleEl.textContent ?? "")));
   });
 }
 

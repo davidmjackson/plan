@@ -1,7 +1,7 @@
 // @ts-check
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parsePoints, isNonEmptyTitle } from "../public/js/validate.js";
+import { parsePoints, isNonEmptyTitle, singleLineTitle } from "../public/js/validate.js";
 
 // Brief asserted case 8
 test("parsePoints accepts positive integers", () => {
@@ -29,4 +29,13 @@ test("isNonEmptyTitle requires non-whitespace content", () => {
   assert.equal(isNonEmptyTitle("  x  "), true);
   assert.equal(isNonEmptyTitle(""), false);
   assert.equal(isNonEmptyTitle("   "), false);
+});
+
+test("singleLineTitle collapses newlines/whitespace to one line and trims", () => {
+  assert.equal(singleLineTitle("Q3 plan"), "Q3 plan"); // unchanged
+  assert.equal(singleLineTitle("  Q3 plan  "), "Q3 plan"); // trimmed
+  assert.equal(singleLineTitle("Q3\nplan"), "Q3 plan"); // contenteditable Enter
+  assert.equal(singleLineTitle("Q3\r\n\tplan"), "Q3 plan"); // pasted CRLF + tab
+  assert.equal(singleLineTitle("Q3   big   plan"), "Q3 big plan"); // runs collapse
+  assert.equal(singleLineTitle("\n\n  "), ""); // newlines-only → empty
 });

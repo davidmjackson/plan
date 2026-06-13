@@ -34,3 +34,16 @@ export function parsePoints(input) {
 export function isNonEmptyTitle(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
+
+/**
+ * Normalise an edited plan title to a single line: collapse every run of
+ * whitespace — including the newlines a contenteditable inserts on Enter or a
+ * multi-line paste — to one space, then trim. The band renders the title on one
+ * line, so the stored value is kept one line too. Pure; the DOM handler calls
+ * this before dispatching setPlanTitle.
+ * @param {string} raw
+ * @returns {string}
+ */
+export function singleLineTitle(raw) {
+  return String(raw).replace(/\s+/g, " ").trim();
+}
