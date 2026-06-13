@@ -34,7 +34,7 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 - **Handoff to Brief 8 (slice 2)**: inherits the deps model, `isViolation`, `depBadges` (the violation flag is already carried on every badge, rendered neutral this slice), `storyLocation`, and the neutral badge — so slice 2 is purely the board SVG layer (cross-sprint connectors on hover/select, the always-visible same-sprint tether) plus the board-side red treatment on cards/connectors. No new action, no schema change.
 - **Open housekeeping** (carried, not actioned): promote `--plum`/`--plumwash`, `#glyph-plan`, and the epic-palette tokens to shared instrument-core; register `plan` in the theme `manifest.mjs` + drift test (suite-level). dragula vendoring decision stands (keep per-app copies; no cross-repo move). Doc/code naming note from Brief 6 still stands: `extractPlan`'s upload mode is `"file"` in code.
 - **Time**: ~1 session.
-- **Director sign-off**: _Pending_ (AI-drafted; closes on the director's edit/sign-off).
+- **Director sign-off**: All Good (AI-drafted; closes on the director's edit/sign-off).
 
 ### 2026-06-13 - Brief 6 built: Resume / New-plan prompt, Screen 3 (P0 #7, slice 2 of 2)
 
