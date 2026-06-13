@@ -9,19 +9,6 @@
     <link rel="stylesheet" href="/css/plan.css" />
   </head>
   <body class="ins plan-page" data-app="plan">
-    <!-- #glyph-plan lives here for now; promote to the shared glyphs.svg sprite
-         in a suite housekeeping ticket (see build log). -->
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-      <symbol id="glyph-plan" viewBox="0 0 24 24" fill="none">
-        <g fill="currentColor">
-          <rect x="3" y="4" width="3" height="16" rx="1.5" opacity="0.5" />
-          <rect x="8.5" y="5" width="12.5" height="4.2" rx="1.4" />
-          <rect x="8.5" y="10.9" width="12.5" height="4.2" rx="1.4" opacity="0.62" />
-          <rect x="8.5" y="16.8" width="9" height="4.2" rx="1.4" />
-        </g>
-      </symbol>
-    </svg>
-
     <header class="topbar">
       <span class="topbar-lead">
         <p class="brand">
@@ -44,7 +31,15 @@
         <button type="button" class="btn btn-ghost btn-sm" id="tb-export">Download board</button>
         <button type="button" class="btn btn-ghost btn-sm" id="tb-import">Import board</button>
         <input type="file" id="board-file" accept="application/json,.json" hidden />
-        <a class="btn btn-ghost btn-sm" data-suite-return hidden>Return to Suite</a>
+        <span class="tbacts-sep" aria-hidden="true"></span>
+        <!-- Static, account-free return to the suite hub (Brief 10 R4): sprintplan
+             ships no auth-client, so this link is always visible, never gated. -->
+        <a class="btn btn-ghost btn-sm suite-return" href="https://sprintsuite.uk">
+          <svg class="mk" width="16" height="16" aria-hidden="true">
+            <use href="/illos/glyphs.svg#glyph-suite" />
+          </svg>
+          <span>Sprint Suite</span>
+        </a>
       </div>
     </header>
 

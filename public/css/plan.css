@@ -1,21 +1,17 @@
 /* sprintplan app styles. Extends instrument-core.css; does not fork tokens.
-   Plum accent (G4) is defined here for now; promote --plum/--plumwash (and
-   --dep-line) to the shared instrument-core source in a suite housekeeping
-   ticket. Amber stays reserved for capacity (pill/banner); --red now reads in
-   TWO non-overlapping places — the capacity pill/banner AND the dependency
-   violation (editor row, board card border, D badge, connector) — never on the
-   same element, so the two semantics stay unambiguous (Brief 8 R5). */
+   The plum accent (--plum/--plumwash/--accent), the --dep-line tether stroke,
+   and the epic-colour palette now live in the shared foundation under
+   .ins[data-app="plan"] (Brief 10 R1 — promoted from here, names unchanged).
+   Amber stays reserved for capacity (pill/banner); --red is plan-local and
+   reads in TWO non-overlapping places — the capacity pill/banner AND the
+   dependency violation (editor row, board card border, D badge, connector) —
+   never on the same element, so the two semantics stay unambiguous (Brief 8 R5). */
 
 .ins[data-app="plan"] {
-  --plum: oklch(0.5 0.1 290);
-  --plumwash: oklch(0.95 0.03 290);
-  --accent: var(--plum);
-  /* Capacity-state colours (pill/banner) and the dependency-violation red. */
+  /* Capacity-state / dependency-violation red — plan-local, NOT promoted (the
+     siblings have no equivalent). Everything else moved to the shared source. */
   --red: oklch(0.5 0.13 25);
   --redwash: oklch(0.95 0.04 25);
-  /* Neutral dependency tether/connector stroke: a soft line, never plum (accent
-     /badge) and never amber/red (capacity/violation). Promotable with --plum. */
-  --dep-line: oklch(0.72 0.03 290);
 }
 
 .plan-page .brand .mk {
@@ -44,6 +40,27 @@
 
 .tbacts #tb-export:focus-visible,
 .tbacts #tb-import:focus-visible {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+}
+
+/* --- Return to Suite (Brief 10 R4) ----------------------------------------
+   A plain, always-visible, account-free link back to the hub (sprintplan is
+   free/ungated, so NO auth-client snippet — the link is static, not revealed
+   by /auth/whoami). Same plum accent + focus ring as every plan control; the
+   #glyph-suite mark carries the suite identity at rest. */
+.tbacts .suite-return .mk {
+  color: var(--plum);
+  display: flex;
+}
+
+.tbacts .suite-return:hover {
+  border-color: var(--plum);
+  color: var(--plum);
+}
+
+.tbacts .suite-return:focus-visible {
   outline: none;
   border-color: var(--plum);
   box-shadow: 0 0 0 3px var(--plumwash);
@@ -402,17 +419,9 @@
 }
 
 /* --- Epic colour palette (G4) --------------------------------------------
-   Keys map to oklch here; the store holds only the key. App-local for now,
-   promotable to instrument-core. None of these are amber/red (reserved). */
-
-.plan-page [data-epic-colour="plum"] { --epic: oklch(0.5 0.1 290); }
-.plan-page [data-epic-colour="violet"] { --epic: oklch(0.5 0.1 265); }
-.plan-page [data-epic-colour="indigo"] { --epic: oklch(0.52 0.1 240); }
-.plan-page [data-epic-colour="teal"] { --epic: oklch(0.55 0.09 206); }
-.plan-page [data-epic-colour="cyan"] { --epic: oklch(0.58 0.09 190); }
-.plan-page [data-epic-colour="green"] { --epic: oklch(0.52 0.09 162); }
-.plan-page [data-epic-colour="moss"] { --epic: oklch(0.55 0.09 140); }
-.plan-page [data-epic-colour="magenta"] { --epic: oklch(0.52 0.11 320); }
+   The [data-epic-colour] → --epic key map now lives in the shared foundation
+   (instrument-core.css, .ins[data-app="plan"] [data-epic-colour]; Brief 10 R1).
+   .epic-dot consumes --epic and stays here. */
 
 .epic-dot {
   width: 12px;
