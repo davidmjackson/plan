@@ -204,6 +204,19 @@ test("validatePlan: a non-array deps fails with a missing-or-invalid-key reason"
   assert.match(result.reason, /deps/);
 });
 
+// --- R8 (Brief 9): a malformed deps ELEMENT fails cleanly, never throws ------
+
+test("validatePlan: a deps element that is not an object fails cleanly (does not throw)", () => {
+  const plan = placedPlan();
+  plan.deps = [null];
+  let result;
+  assert.doesNotThrow(() => {
+    result = validatePlan(plan);
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /dependency/i);
+});
+
 // --- Case 10: foreign file fails on import ---------------------------------
 
 test("extractPlan(file): an object with no app header is refused as foreign", () => {

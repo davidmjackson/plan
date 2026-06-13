@@ -32,6 +32,15 @@
         </p>
       </span>
       <div class="tbacts">
+        <details class="export-menu" id="tb-report">
+          <summary class="btn btn-ghost btn-sm">Export summary ▾</summary>
+          <div class="export-menu-list" role="menu">
+            <button type="button" class="btn btn-ghost btn-sm" data-export="md" role="menuitem">Markdown (.md)</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-export="html" role="menuitem">Printable HTML (.html)</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-export="csv" role="menuitem">Spreadsheet (.csv)</button>
+          </div>
+        </details>
+        <span class="tbacts-sep" aria-hidden="true"></span>
         <button type="button" class="btn btn-ghost btn-sm" id="tb-export">Download board</button>
         <button type="button" class="btn btn-ghost btn-sm" id="tb-import">Import board</button>
         <input type="file" id="board-file" accept="application/json,.json" hidden />
