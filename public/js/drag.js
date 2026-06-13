@@ -12,6 +12,7 @@
 
 import { moveStory } from "./actions.js";
 import { NO_EPIC } from "./backlog.js";
+import { hideConnectors, redrawConnectors } from "./connectors.js";
 
 /** @type {{ destroy(): void, on(ev: string, fn: Function): any, cancel(revert?: boolean): void } | null} */
 let drake = null;
@@ -58,6 +59,9 @@ export function setupDrag(store) {
 
   d.on("drag", () => {
     dragging = true;
+    // Hide the connector layer for the gesture (R7): a line to a mid-drag card
+    // would be stale. Restored by the redraw below (cancel) or the drop's render.
+    hideConnectors();
   });
   d.on("dragend", () => {
     // Clear AFTER the trailing click has been swallowed (click fires before this
@@ -65,6 +69,10 @@ export function setupDrag(store) {
     setTimeout(() => {
       dragging = false;
     }, 0);
+    // Restore the layer. A real drop also dispatches MOVE_STORY → render, which
+    // recreates the overlay against the new positions; a cancelled drag fires no
+    // dispatch, so this redraw is what brings the (unmoved) connectors back.
+    redrawConnectors();
   });
 
   d.on(

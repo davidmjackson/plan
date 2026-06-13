@@ -11,6 +11,7 @@ import { renderBacklog, storyCard } from "./backlog.js";
 import { sprintPlacedPoints } from "./board-selectors.js";
 import { depBadges } from "./dep-selectors.js";
 import { bannerEl, isBannerDismissed } from "./banner.js";
+import { drawConnectors } from "./connectors.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -151,6 +152,11 @@ export function renderBoard(state) {
 
     board.appendChild(el);
   }
+
+  // The dependency drawing layer (Brief 8): the LAST step of renderBoard, after
+  // every sprint and card is in the DOM, so the overlay can measure real rects.
+  // A pure view over deps/isViolation; it dispatches nothing (R1/R2).
+  drawConnectors(state);
 }
 
 /**

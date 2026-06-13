@@ -12,6 +12,7 @@ import {
   depsForStory,
   depBadges,
   pickableDepTargets,
+  connectorsToDraw,
 } from "../public/js/dep-selectors.js";
 
 const A = ActionTypes;
@@ -126,4 +127,59 @@ test("pickableDepTargets: excludes self and already-paired, includes a backlog s
   // each target carries id, title, location for grouping
   const cTarget = pickableDepTargets(s, "a").find((t) => t.id === "c");
   assert.deepEqual(cTarget, { id: "c", title: "C", location: { kind: "backlog" } });
+});
+
+// --- Brief 8 (slice 2): connectorsToDraw, the board drawing set ------------
+// Pure "which lines exist" core, unit-tested before any SVG. fromIndex is the
+// blocker's (do-first) sprint index, toIndex the blocked's (dependent) index;
+// the entry names blockerId/blockedId so the view can place the arrowhead.
+
+test("connectorsToDraw: both endpoints in different sprints draws one connector", () => {
+  // a in sprint 0, b in sprint 1; blocker a (do first) -> blocked b
+  const s = withDeps(fixture(), [pair("dep_1", "a", "b")]);
+  const drawn = connectorsToDraw(s);
+  assert.equal(drawn.length, 1);
+  const c = drawn[0];
+  assert.equal(c.kind, "connector");
+  assert.equal(c.fromIndex, 0); // blocker a
+  assert.equal(c.toIndex, 1); // blocked b
+  assert.equal(c.dep, s.deps[0]);
+});
+
+test("connectorsToDraw: both endpoints in the SAME sprint is a tether (fromIndex === toIndex)", () => {
+  let s = reduce(fixture(), place("b", 0)); // move b alongside a in sprint 0
+  s = withDeps(s, [pair("dep_1", "a", "b")]);
+  const drawn = connectorsToDraw(s);
+  assert.equal(drawn.length, 1);
+  assert.equal(drawn[0].kind, "tether");
+  assert.equal(drawn[0].fromIndex, 0);
+  assert.equal(drawn[0].toIndex, 0);
+});
+
+test("connectorsToDraw: a pair with either endpoint in the backlog draws nothing (R3/G7)", () => {
+  // c is in the backlog; neither slot order produces an entry
+  assert.equal(connectorsToDraw(withDeps(fixture(), [pair("d", "a", "c")])).length, 0);
+  assert.equal(connectorsToDraw(withDeps(fixture(), [pair("d", "c", "a")])).length, 0);
+});
+
+test("connectorsToDraw: violation flag matches isViolation across order/same-sprint/backlog", () => {
+  // out of order: blocker b (sprint 1) but blocked a (sprint 0) -> violation
+  const bad = withDeps(fixture(), [pair("d", "b", "a")]);
+  assert.equal(connectorsToDraw(bad)[0].violation, true);
+  // correct order: blocker a (sprint 0) before blocked b (sprint 1) -> false
+  const good = withDeps(fixture(), [pair("d", "a", "b")]);
+  assert.equal(connectorsToDraw(good)[0].violation, false);
+  // same sprint -> false
+  const same = withDeps(reduce(fixture(), place("b", 0)), [pair("d", "b", "a")]);
+  assert.equal(connectorsToDraw(same)[0].violation, false);
+});
+
+test("connectorsToDraw: records blocker/blocked ids and indices so the view can aim the arrowhead", () => {
+  // pair stored as { blockerId: b, blockedId: a } — the dependent (arrowhead) end is a
+  const s = withDeps(fixture(), [pair("dep_1", "b", "a")]);
+  const c = connectorsToDraw(s)[0];
+  assert.equal(c.blockerId, "b");
+  assert.equal(c.blockedId, "a");
+  assert.equal(c.fromIndex, 1); // blocker b in sprint 1
+  assert.equal(c.toIndex, 0); // blocked a in sprint 0 (the arrowhead end)
 });
