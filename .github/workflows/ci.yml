@@ -1,0 +1,44 @@
+name: CI
+
+# Quality gates mirroring local verification: theme-drift, typecheck, unit tests.
+# The drift check compares plan's synced theme assets against the suite repo
+# (the shared source of truth), so we check out davidmjackson/suite alongside
+# plan and invoke the checker with an explicit plan path — npm's "drift" script
+# hardcodes the dev-box /var/www paths and cannot run on a CI runner.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out plan
+        uses: actions/checkout@v4
+
+      - name: Check out suite (shared theme source of truth)
+        uses: actions/checkout@v4
+        with:
+          repository: davidmjackson/suite
+          ref: main
+          path: _suite
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Theme-drift gate
+        run: node _suite/shared/theme/check-theme-drift.mjs "$GITHUB_WORKSPACE"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: node --test tests/*.test.js
