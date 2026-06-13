@@ -83,10 +83,11 @@ Settings/plan (Brief 1): `SET_START_DATE`, `SET_DURATION_MONTHS`, `SET_SPRINT_WE
 
 ## Known limitations / notes carried into Brief 8
 
-- **Cycle detection is deferred (by ruling).** Self-dep and duplicate-pair are rejected at the picker (exclusion) and the load boundary (`validatePlan`). A true cycle (A needs B, B needs A) is NOT graph-detected: it simply produces mutual violation flags when both are scheduled, which is honest and never causes a real failure. If a cycle is ever ruled to need rejection, that is a defined addition to `validatePlan` + the picker, not a "while we're here".
+- **Cycle detection is deferred (by ruling).** Self-dep and identical-pair are rejected at the picker (exclusion) and the load boundary (`validatePlan`). Note the load-boundary duplicate check is **directional** (keyed `blockerId>blockedId`): a *reverse* pair (A needs B and B needs A) is not a duplicate and passes validation by construction. The picker's exclude-already-paired rule is what prevents creating one through the UI. A true cycle is therefore never graph-detected: it simply produces mutual violation flags when both are scheduled, which is honest and never causes a real failure. If a cycle is ever ruled to need rejection, that is a defined addition to `validatePlan` + the picker, not a "while we're here".
 - **The D number renumbers on removal** (derived, intended). A within-session aid, not a stable reference.
 - **No board-side dependency visual exists yet** — no SVG, no connectors, no tethers, no board-side red. That is the whole of slice 2.
 - **Doc/code naming note still stands** (from Brief 6): `extractPlan`'s upload mode is `"file"` in code.
+- **`validatePlan` does not shape-guard each `deps` element (logged, not fixed in slice 1).** The pair loop reads `d.blockerId`/`d.blockedId` without first confirming `d` is an object, so a malformed import such as `deps: [null]` throws at the load boundary instead of returning a clean `{ ok: false, reason }` in the house style. The picker cannot produce this and our own saves never will — only a hand-edited or corrupted file reaches it — so it is recorded here rather than patched in the data slice. The natural home for the one-line object guard is the Exports brief (P0 #6), which already touches the I/O surface; until then, do not assume `deps` elements are pre-shape-checked downstream.
 
 ---
 

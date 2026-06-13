@@ -42,10 +42,15 @@ export function storyCard(story, epic, badges = []) {
   }
   row.append(el("span", "bl-story-title", story.title));
   row.append(el("span", "bl-story-pts mono", String(story.points)));
-  // Shared D badges, neutral this slice (the board-side red treatment is slice 2).
+  // Shared D badges. The violation flag is carried per badge (Brief 7); Brief 8
+  // renders it as the board-side red treatment. A badge (and the card border) go
+  // red only when isViolation is true, which by construction needs BOTH endpoints
+  // scheduled — so a backlog card's badges are never red (G7/R3), and storyCard
+  // stays signature-stable (R2): it reads the flag it is already handed.
   for (const badge of badges) {
-    row.append(el("span", "dep-badge mono", badge.label));
+    row.append(el("span", "dep-badge mono" + (badge.violation ? " dep-badge--violation" : ""), badge.label));
   }
+  if (badges.some((b) => b.violation)) row.classList.add("bl-story--dep-violation");
   return row;
 }
 

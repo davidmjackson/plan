@@ -120,6 +120,37 @@ export function depBadges(state, storyId) {
 }
 
 /**
+ * The board drawing set (Brief 8 slice 2): one entry per pair with BOTH
+ * endpoints placed in sprints. Pairs touching the backlog are excluded (R3/G7).
+ * kind is "tether" when both share a sprint (fromIndex === toIndex), else
+ * "connector". fromIndex is the blocker's (do-first) sprint index, toIndex the
+ * blocked's (dependent) index; the entry names blockerId/blockedId so the view
+ * can place the arrowhead at the dependent end. violation === isViolation.
+ * Pure and DOM-free: the view consumes this and only measures pixels.
+ * @param {PlanState} state
+ * @returns {Array<{ dep: Dep, blockerId: string, blockedId: string,
+ *   fromIndex: number, toIndex: number, kind: "tether" | "connector", violation: boolean }>}
+ */
+export function connectorsToDraw(state) {
+  const drawn = [];
+  for (const dep of state.deps) {
+    const blocker = storyLocation(state, dep.blockerId);
+    const blocked = storyLocation(state, dep.blockedId);
+    if (blocker?.kind !== "sprint" || blocked?.kind !== "sprint") continue;
+    drawn.push({
+      dep,
+      blockerId: dep.blockerId,
+      blockedId: dep.blockedId,
+      fromIndex: blocker.index,
+      toIndex: blocked.index,
+      kind: /** @type {"tether" | "connector"} */ (blocker.index === blocked.index ? "tether" : "connector"),
+      violation: isViolation(state, dep),
+    });
+  }
+  return drawn;
+}
+
+/**
  * The picker list: every OTHER story not already paired with this one, each as
  * { id, title, location } for grouping by location and exclusion (R3, R4).
  * Backlog stories are pickable.

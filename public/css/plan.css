@@ -1,15 +1,21 @@
 /* sprintplan app styles. Extends instrument-core.css; does not fork tokens.
-   Plum accent (G4) is defined here for now; promote --plum/--plumwash to the
-   shared instrument-core source in a suite housekeeping ticket. Amber and red
-   are reserved for capacity semantics only. */
+   Plum accent (G4) is defined here for now; promote --plum/--plumwash (and
+   --dep-line) to the shared instrument-core source in a suite housekeeping
+   ticket. Amber stays reserved for capacity (pill/banner); --red now reads in
+   TWO non-overlapping places — the capacity pill/banner AND the dependency
+   violation (editor row, board card border, D badge, connector) — never on the
+   same element, so the two semantics stay unambiguous (Brief 8 R5). */
 
 .ins[data-app="plan"] {
   --plum: oklch(0.5 0.1 290);
   --plumwash: oklch(0.95 0.03 290);
   --accent: var(--plum);
-  /* Capacity-state colours (reserved; never the accent). */
+  /* Capacity-state colours (pill/banner) and the dependency-violation red. */
   --red: oklch(0.5 0.13 25);
   --redwash: oklch(0.95 0.04 25);
+  /* Neutral dependency tether/connector stroke: a soft line, never plum (accent
+     /badge) and never amber/red (capacity/violation). Promotable with --plum. */
+  --dep-line: oklch(0.72 0.03 290);
 }
 
 .plan-page .brand .mk {
@@ -135,6 +141,9 @@
   column-gap: 16px;
   row-gap: 14px;
   align-items: stretch;
+  /* Positioning context for the dependency overlay (Brief 8): the <svg> is the
+     board's last child, absolutely placed over the grid in board-local coords. */
+  position: relative;
 }
 
 .rail-seg {
@@ -774,6 +783,47 @@
   background: var(--plumwash);
   color: var(--plum);
   border: 1px solid var(--plum);
+}
+
+/* Board-side violation (Brief 8 R5/R8): the neutral D badge turns red when its
+   pair is a violation. Backlog badges never qualify (G7 needs both scheduled). */
+.dep-badge--violation {
+  background: var(--redwash);
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* A card that is an endpoint of a violating pair (Brief 8 R5). Distinct element
+   from the capacity pill/banner, so a violating card in an over-capacity sprint
+   reads unambiguously: the pill is capacity-red, the card is violation-red. */
+.bl-story--dep-violation {
+  border-color: var(--red);
+  background: var(--redwash);
+}
+
+/* The dependency drawing layer (Brief 8): one <svg> over the board grid, sized
+   to its content box, scrolls with the page. Non-interactive — hover is detected
+   on the cards, so the overlay never intercepts a click or a drag. */
+.dep-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Tethers and connectors. Neutral --dep-line at rest; --red on a violation. The
+   arrowhead marker inherits the stroke (fill: context-stroke) so it follows. */
+.dep-line {
+  fill: none;
+  stroke: var(--dep-line);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.dep-line--violation {
+  stroke: var(--red);
+  stroke-width: 2;
 }
 
 .deps-section {
