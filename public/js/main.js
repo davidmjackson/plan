@@ -14,6 +14,7 @@ import {
   setBufferPct,
   setPlanTitle,
   loadPlan,
+  newPlan,
 } from "./actions.js";
 import { nextMonday } from "./date.js";
 import { validatePlan, migratePlan, exportPlan, extractPlan } from "./plan-io.js";
@@ -23,6 +24,7 @@ import { openCardEditor } from "./card-editor.js";
 import { openEpicEditor } from "./epic-editor.js";
 import { setupDrag, isDragging } from "./drag.js";
 import { dismissBanner, clearDismissedBanners } from "./banner.js";
+import { openResumePrompt, openInvalidPrompt } from "./resume-prompt.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -58,35 +60,59 @@ function normalise(plan) {
   return { ...plan, lastReturnedStoryIds: [] };
 }
 
-/**
- * Restore the autosaved board, now VALIDATED. Parse, unwrap (restore leniency:
- * the { savedAt, plan } envelope OR a legacy bare state), migrate, validate. On
- * any structural failure, fall back to a fresh plan exactly as a parse error
- * already does. KNOWN LIMITATION (closed in Brief 6): an invalid autosave is
- * discarded, not recovered — the next action's autosave overwrites it. This
- * brief only stops the crash; the resume prompt gives a bad save a home.
- * @returns {import("./store.js").PlanState}
- */
-function loadOrInit() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const ext = extractPlan(JSON.parse(saved), "restore");
-      if (ext.ok) {
-        const mig = migratePlan(ext.plan);
-        if (mig.ok) {
-          const val = validatePlan(mig.plan);
-          if (val.ok) return normalise(val.plan);
-        }
-      }
-    }
-  } catch {
-    // Corrupt/blocked storage: fall through to a fresh plan rather than crash.
-  }
+/** A fresh default plan anchored at the next working Monday (G1). */
+function freshPlan() {
   return createInitialState(nextMonday(todayISO()));
 }
 
-const store = createStore(loadOrInit());
+/**
+ * @typedef {{ kind: "none" }
+ *   | { kind: "valid", plan: import("./store.js").PlanState, savedAt: string | undefined }
+ *   | { kind: "invalid", reason: string, raw: string }} SaveVerdict
+ */
+
+/**
+ * CLASSIFY the autosaved board without seeding anything (Brief 6, R2). The store
+ * always boots fresh; this only inspects the stored bytes so the load-time prompt
+ * knows what to offer. Three outcomes: none (first run); valid (resumable plan +
+ * its savedAt); invalid (a parseable-or-not save that fails the pipeline — we
+ * keep the RAW string and the human reason so the prompt can surface and rescue
+ * it, R5). Crucially this READS but never WRITES, so the bad bytes stay intact
+ * under the prompt until the user acts — that is what makes the R5 rescue real.
+ * @returns {SaveVerdict}
+ */
+function classifySave() {
+  let raw;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return { kind: "none" }; // storage blocked: treat as a clean first run
+  }
+  if (raw == null) return { kind: "none" };
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { kind: "invalid", reason: "the saved data isn't valid JSON", raw };
+  }
+  const ext = extractPlan(parsed, "restore");
+  if (!ext.ok) return { kind: "invalid", reason: ext.reason, raw };
+  const mig = migratePlan(ext.plan);
+  if (!mig.ok) return { kind: "invalid", reason: mig.reason, raw };
+  const val = validatePlan(mig.plan);
+  if (!val.ok) return { kind: "invalid", reason: val.reason, raw };
+
+  const savedAt = parsed && typeof parsed === "object" ? parsed.savedAt : undefined;
+  return { kind: "valid", plan: normalise(val.plan), savedAt };
+}
+
+// The store ALWAYS boots fresh (R2): a saved board is restored only by an
+// explicit, prompted loadPlan dispatch, never substituted at boot. Two safety
+// properties fall out — the saved board never renders under the prompt (no
+// last-quarter flash on a shared screen), and autosave (dispatch-only) cannot
+// overwrite the saved bytes until the user chooses (the R5 rescue stays open).
+const store = createStore(freshPlan());
 
 // Autosave: every action persists immediately (cross-cutting rule: refresh
 // loses nothing). Persist the { savedAt, plan } envelope (R7) — savedAt is
@@ -229,20 +255,39 @@ function slugify(/** @type {string | null} */ title) {
   return (title ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "untitled-plan";
 }
 
-// Download the current board as a self-identifying .json (R2 header).
-document.getElementById("tb-export")?.addEventListener("click", () => {
-  const state = store.getState();
-  const payload = exportPlan(state, nowISO());
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+/** Trigger a browser download of `text` as `filename`. The thin glue both the
+ * board export and the invalid-save rescue share (Brief 6 flagged refactor). */
+function downloadText(/** @type {string} */ text, /** @type {string} */ filename) {
+  const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${slugify(state.meta.title)}-${todayISO()}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-});
+}
+
+/** Download a plan as a self-identifying board .json (R2 header). Reused by the
+ * top-bar Download control AND the Start-new escape hatch (on the SAVED plan). */
+function downloadBoard(/** @type {import("./store.js").PlanState} */ state) {
+  const payload = exportPlan(state, nowISO());
+  downloadText(JSON.stringify(payload, null, 2), `${slugify(state.meta.title)}-${todayISO()}.json`);
+}
+
+/** Download the raw, verbatim stored bytes of an unreadable save (R5 rescue).
+ * Verbatim, NOT reserialised: a structurally-broken save is handed back exactly
+ * as stored so nothing recoverable is lost to reformatting. */
+function downloadRaw(/** @type {string} */ text) {
+  downloadText(text, `unreadable-board-${todayISO()}.json`);
+}
+
+document.getElementById("tb-export")?.addEventListener("click", () => downloadBoard(store.getState()));
+
+/** @type {{ close: () => void } | null} The open load-time prompt, if any. A
+ * successful import closes it; mid-session (no prompt) it stays null. */
+let activePrompt = null;
 
 // Import a board file: ATOMIC (R3) — validate fully before any dispatch, so a
 // bad or foreign file leaves the current board exactly as it was.
@@ -265,12 +310,43 @@ fileInput?.addEventListener("change", async () => {
   const val = validatePlan(mig.plan);
   if (!val.ok) return flash(`Import failed: ${val.reason}.`);
   store.dispatch(loadPlan(normalise(val.plan))); // autosaves + repaints for free
+  activePrompt?.close(); // a load-time import closes the prompt; mid-session it is null
+  activePrompt = null;
   flash("Board imported.");
 });
 
-// First-run affordance: briefly highlight the strip as the edit surface.
-const strip = document.getElementById("settings-strip");
-if (strip) {
-  strip.classList.add("is-fresh");
-  setTimeout(() => strip.classList.remove("is-fresh"), 5000);
+// --- Load-time gate: the Resume / New-plan prompt (Screen 3, R1/R2) ---------
+// The store already booted fresh and painted an empty board. Now classify the
+// saved bytes and, only if a save exists, open the prompt OVER that fresh board.
+// Nothing has dispatched yet, so the saved bytes are still intact for rescue.
+
+const verdict = classifySave();
+
+if (verdict.kind === "valid") {
+  activePrompt = openResumePrompt(
+    { plan: verdict.plan, savedAt: verdict.savedAt, nowISO: nowISO() },
+    {
+      onResume: () => store.dispatch(loadPlan(verdict.plan)), // already normalised
+      onStartNew: () => store.dispatch(newPlan(nextMonday(todayISO()))),
+      onImport: () => fileInput?.click(),
+      onDownloadCurrent: () => downloadBoard(verdict.plan),
+    },
+  );
+} else if (verdict.kind === "invalid") {
+  activePrompt = openInvalidPrompt(
+    { reason: verdict.reason },
+    {
+      onResume: () => {}, // no resume on an invalid save
+      onStartNew: () => store.dispatch(newPlan(nextMonday(todayISO()))),
+      onImport: () => fileInput?.click(),
+      onDownloadRescue: () => downloadRaw(verdict.raw),
+    },
+  );
+} else {
+  // First run only (no save): briefly highlight the strip as the edit surface.
+  const strip = document.getElementById("settings-strip");
+  if (strip) {
+    strip.classList.add("is-fresh");
+    setTimeout(() => strip.classList.remove("is-fresh"), 5000);
+  }
 }

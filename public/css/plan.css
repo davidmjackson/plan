@@ -652,3 +652,109 @@
   box-shadow: 0 10px 30px -16px oklch(0.3 0.05 240 / 0.9);
   z-index: 20;
 }
+
+/* --- Resume / New-plan prompt (Screen 3, Brief 6) -------------------------- */
+/* Reuses the .modal-overlay / .modal-card chrome. Plum accent for the primary
+   action and focus rings; danger-ghost for the destructive Start-new; mono for
+   every number, the relative time, and the summary. NO capacity colours here —
+   amber/red mean capacity and nothing else (so the invalid reason is neutral). */
+
+.rp-card {
+  max-width: 440px;
+}
+
+.rp-eyebrow {
+  color: var(--plum);
+  margin-bottom: 8px;
+}
+
+.rp-card .modal-heading {
+  margin-bottom: 4px;
+}
+
+.rp-meta {
+  font-size: 13px;
+  color: var(--soft);
+  margin-bottom: 14px;
+}
+
+.rp-summary {
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+}
+
+.rp-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* A class with display:flex would otherwise beat the [hidden] UA rule. */
+.rp-actions[hidden] {
+  display: none;
+}
+
+.rp-resume {
+  background: var(--plum);
+  color: #fff;
+  border-color: var(--plum);
+}
+
+.rp-resume:hover {
+  filter: brightness(1.08);
+}
+
+.rp-resume:focus-visible,
+.rp-import:focus-visible {
+  outline: 2px solid var(--plum);
+  outline-offset: 2px;
+}
+
+.rp-startnew {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+}
+
+.rp-startnew[hidden] {
+  display: none;
+}
+
+.rp-warn {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0;
+}
+
+.rp-confirm-row {
+  display: flex;
+  gap: 8px;
+}
+
+.rp-reason {
+  font-size: 13.5px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.rp-import {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--plum);
+  text-decoration: underline;
+  cursor: pointer;
+}
