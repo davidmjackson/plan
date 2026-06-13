@@ -32,3 +32,23 @@ export function sprintPlacedPoints(state, sprintIndex) {
   if (!sprint) return 0;
   return placedPoints(sprint.placedStoryIds, state.stories);
 }
+
+/**
+ * Derived numbers for the resume card (Brief 6, Screen 3). months is the
+ * SETTINGS duration (not the sprint count); sprints is the GENERATED count;
+ * stories is ALL stories (backlog + placed); placedPoints is PLACED only
+ * (backlog excluded), summed via sprintPlacedPoints so the points authority is
+ * never re-implemented. Pure, DOM-free.
+ * @param {PlanState} state
+ * @returns {{ months: number, sprints: number, stories: number, placedPoints: number }}
+ */
+export function planSummary(state) {
+  let placedPoints = 0;
+  for (let i = 0; i < state.sprints.length; i++) placedPoints += sprintPlacedPoints(state, i);
+  return {
+    months: state.settings.durationMonths,
+    sprints: state.sprints.length,
+    stories: Object.keys(state.stories).length,
+    placedPoints,
+  };
+}

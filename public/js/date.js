@@ -137,3 +137,38 @@ export function nextMonday(iso) {
   const delta = ((8 - isoWeekday(iso)) % 7) || 7;
   return addDays(iso, delta);
 }
+
+/**
+ * Human "Last edited" string for the resume card (Brief 6, R7). PURE: "now" is
+ * an argument, so it is clock-free and unit-testable. Minutes and hours are
+ * ELAPSED time (the truly-recent buckets); yesterday and N-days are CALENDAR-day
+ * differences, so a sub-24h save that crossed midnight reads "yesterday", not
+ * "N hours ago" (the seam pinned in the unit net). Past the 14-day bound it
+ * falls back to the absolute ISO date. A missing/invalid timestamp (a legacy
+ * bare save with no savedAt) returns "unknown" and never throws.
+ * @param {string | undefined | null} fromISO  the savedAt timestamp
+ * @param {string} nowISO  the current instant, supplied by the caller
+ * @returns {string}
+ */
+export function relativeTime(fromISO, nowISO) {
+  if (!fromISO || typeof fromISO !== "string") return "unknown";
+  const fromMs = Date.parse(fromISO);
+  const nowMs = Date.parse(nowISO);
+  if (Number.isNaN(fromMs) || Number.isNaN(nowMs)) return "unknown";
+
+  const elapsedSec = Math.floor((nowMs - fromMs) / 1000);
+  if (elapsedSec < 60) return "just now";
+  const minutes = Math.floor(elapsedSec / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+
+  // Day-scale buckets are CALENDAR-day differences, not elapsed/86400 (so a
+  // save 3 hours ago across midnight is "yesterday", not "3 hours ago").
+  const days = toOrdinal(parseISO(nowISO.slice(0, 10))) - toOrdinal(parseISO(fromISO.slice(0, 10)));
+  if (days <= 0) {
+    const hours = Math.floor(elapsedSec / 3600);
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  }
+  if (days === 1) return "yesterday";
+  if (days < 14) return `${days} days ago`;
+  return `on ${fromISO.slice(0, 10)}`;
+}

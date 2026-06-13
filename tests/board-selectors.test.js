@@ -3,9 +3,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createInitialState, reduce } from "../public/js/store.js";
 import { ActionTypes, moveStory } from "../public/js/actions.js";
-import { sprintPlacedPoints } from "../public/js/board-selectors.js";
+import { sprintPlacedPoints, planSummary } from "../public/js/board-selectors.js";
 import { backlogGroups, epicSummary } from "../public/js/backlog-selectors.js";
 import { pillState } from "../public/js/plan-maths.js";
+import { setDurationMonths } from "../public/js/actions.js";
 
 const A = ActionTypes;
 const epic = (id, title) => ({ type: A.ADD_EPIC, payload: { id, title } });
@@ -81,4 +82,36 @@ test("backlogGroups has no No-epic group when no null-epic story exists at all",
   s = reduce(s, epic("E1", "One"));
   s = reduce(s, story("a", "E1", 3));
   assert.equal(backlogGroups(s).some((g) => g.epic === null), false);
+});
+
+// --- planSummary: the resume-card derived numbers (Brief 6) ------------------
+// months is settings.durationMonths (NOT sprints); sprints is sprints.length;
+// stories is ALL stories; placedPoints is PLACED only (backlog excluded),
+// summed via sprintPlacedPoints. Cases pin every distinction the brief names.
+
+test("planSummary on a fresh default plan: 3 months, 7 sprints, no stories, no placed points", () => {
+  const s = createInitialState("2026-07-06"); // 3-month, 2-week default
+  assert.equal(s.sprints.length, 7); // confirm the generated count, don't blind-trust
+  assert.deepEqual(planSummary(s), { months: 3, sprints: 7, stories: 0, placedPoints: 0 });
+});
+
+test("planSummary counts ALL stories but only PLACED points (backlog excluded)", () => {
+  let s = createInitialState("2026-07-06");
+  s = reduce(s, story("a", null, 8));
+  s = reduce(s, story("b", null, 5));
+  s = reduce(s, story("c", null, 3)); // left in the backlog
+  s = reduce(s, place("a", 0));
+  s = reduce(s, place("b", 1));
+  const sum = planSummary(s);
+  assert.equal(sum.stories, 3); // all three, even the backlog one
+  assert.equal(sum.placedPoints, 13); // 8 + 5 placed; the 3-pt backlog story excluded
+  assert.deepEqual(sum, { months: 3, sprints: 7, stories: 3, placedPoints: 13 });
+});
+
+test("planSummary keeps months (settings) distinct from sprints (generated) on a 1-month plan", () => {
+  let s = createInitialState("2026-07-06");
+  s = reduce(s, setDurationMonths(1));
+  const sum = planSummary(s);
+  assert.equal(sum.months, 1);
+  assert.equal(sum.sprints, 3); // a 1-month/2-week plan generates 3 sprints
 });
