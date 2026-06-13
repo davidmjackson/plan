@@ -758,3 +758,126 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* --- Dependencies (Brief 7) -------------------------------------------------
+   The shared D badge (plum/ink, neutral this slice — the board-side red is
+   slice 2). The card-editor section: existing links as rows (a violating row
+   takes the red treatment), then the inline picker grouped by location. No
+   capacity colours here; amber/red mean capacity only. */
+
+/* Shared D badge on the card (board + backlog), after the points chip. */
+.dep-badge {
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: var(--plumwash);
+  color: var(--plum);
+  border: 1px solid var(--plum);
+}
+
+.deps-section {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.deps-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deps-empty {
+  font-size: 12.5px;
+  color: var(--soft);
+}
+
+.dep-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bone);
+}
+
+.dep-dir {
+  font-size: 12.5px;
+  color: var(--soft);
+}
+
+.dep-other {
+  font-size: 13px;
+}
+
+.dep-loc {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.dep-remove {
+  padding: 2px 8px;
+}
+
+/* Violation visible at creation time (R6, Screen 2). The only red this slice. */
+.dep-row--violation {
+  border-color: var(--red);
+  background: var(--redwash);
+}
+
+.dep-row--violation .dep-loc {
+  color: var(--red);
+}
+
+.deps-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dep-picker {
+  margin-top: 10px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--bone);
+}
+
+.dep-picker[hidden] {
+  display: none;
+}
+
+.dep-search {
+  width: 100%;
+}
+
+.dep-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dep-group-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--soft);
+  margin-top: 6px;
+}
+
+.dep-option {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.dep-option:focus-visible,
+.dep-remove:focus-visible {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px var(--plumwash);
+}

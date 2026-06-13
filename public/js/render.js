@@ -9,6 +9,7 @@ import { sprintCapacity, pillState, adjustedCapacity, overBy } from "./plan-math
 import { assignSprintsToMonths } from "./month-rail.js";
 import { renderBacklog, storyCard } from "./backlog.js";
 import { sprintPlacedPoints } from "./board-selectors.js";
+import { depBadges } from "./dep-selectors.js";
 import { bannerEl, isBannerDismissed } from "./banner.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -143,7 +144,7 @@ export function renderBoard(state) {
         const story = state.stories[id];
         if (!story) continue;
         const epic = story.epicId ? state.epics[story.epicId] ?? null : null;
-        body.appendChild(storyCard(story, epic));
+        body.appendChild(storyCard(story, epic, depBadges(state, story.id)));
       }
     }
     el.appendChild(body);

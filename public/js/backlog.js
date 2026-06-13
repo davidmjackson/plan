@@ -7,6 +7,7 @@
 
 import { el } from "./dom.js";
 import { backlogGroups, epicSummary } from "./backlog-selectors.js";
+import { depBadges } from "./dep-selectors.js";
 
 /** Collapsed epic ids — view-only, survives re-render. @type {Set<string>} */
 const collapsed = new Set();
@@ -27,8 +28,9 @@ export const NO_EPIC = "__none__";
  * attributes the delegated click and the dragula accepts()/drop wiring read.
  * @param {{ id: string, title: string, summary: string, points: number, epicId: string | null }} story
  * @param {{ id: string, title: string, colourKey: string } | null} [epic]
+ * @param {Array<{ label: string, violation: boolean }>} [badges]  shared D badges (Brief 7)
  */
-export function storyCard(story, epic) {
+export function storyCard(story, epic, badges = []) {
   const row = el("div", "bl-story");
   row.dataset.act = "edit-story";
   row.dataset.story = story.id;
@@ -40,6 +42,10 @@ export function storyCard(story, epic) {
   }
   row.append(el("span", "bl-story-title", story.title));
   row.append(el("span", "bl-story-pts mono", String(story.points)));
+  // Shared D badges, neutral this slice (the board-side red treatment is slice 2).
+  for (const badge of badges) {
+    row.append(el("span", "dep-badge mono", badge.label));
+  }
   return row;
 }
 
@@ -103,7 +109,7 @@ export function renderBacklog(state) {
       // whose epicId differs from this group's, so a drag never reparents.
       body.dataset.drop = "backlog";
       body.dataset.epicId = epic ? epic.id : NO_EPIC;
-      for (const story of group.stories) body.append(storyCard(story));
+      for (const story of group.stories) body.append(storyCard(story, null, depBadges(state, story.id)));
       const addStory = el("button", "bl-add-story", "+ Story");
       addStory.dataset.act = "add-story";
       if (epic) addStory.dataset.epic = epic.id;

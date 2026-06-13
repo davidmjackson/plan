@@ -1,14 +1,17 @@
 // @ts-check
 /**
- * Card (story) editor modal — Screen 2 minus the dependencies section (deferred
- * to the dependencies brief). View-only state; commits via ADD_STORY /
- * EDIT_STORY / DELETE_STORY. The dependencies section is intentionally absent.
+ * Card (story) editor modal — Screen 2. View-only state for the story fields
+ * (commit via ADD_STORY / EDIT_STORY / DELETE_STORY on Save); the Dependencies
+ * section commits LIVE via LINK_DEP / UNLINK_DEP, since a link is a fact about
+ * two existing stories, not a pending field edit. Dependencies show only when
+ * editing a saved story (a new, unsaved story has no id to link).
  */
 
 import { el } from "./dom.js";
 import { openModal } from "./modal.js";
-import { addStory, editStory, deleteStory, addEpic } from "./actions.js";
+import { addStory, editStory, deleteStory, addEpic, linkDep, unlinkDep } from "./actions.js";
 import { parsePoints, isNonEmptyTitle } from "./validate.js";
+import { depsForStory, pickableDepTargets, locationLabel, storyLocation } from "./dep-selectors.js";
 
 const FIB = [1, 2, 3, 5, 8, 13, 21];
 
@@ -136,6 +139,11 @@ export function openCardEditor(store, opts = {}) {
   summaryField.append(summaryInput);
   content.append(summaryField);
 
+  // Dependencies (Brief 7) — only for a saved story; commits live ----------
+  if (isEdit && existing) {
+    content.append(buildDependencies(store, existing.id));
+  }
+
   // Dirty tracking --------------------------------------------------------
   const snapshot = () => JSON.stringify({
     title: titleInput.value,
@@ -202,4 +210,142 @@ export function openCardEditor(store, opts = {}) {
       delBtn.textContent = "Delete story";
     }, 3000);
   }
+}
+
+/**
+ * The Dependencies section for a saved story (Screen 2, R6). Renders existing
+ * links as rows (shared badge, direction, paired title + location, remove), with
+ * a violating row in the red treatment annotated with the other side's location.
+ * "This blocks..." / "This needs..." open an inline picker grouped by location;
+ * selecting dispatches LINK_DEP. Every dispatch re-renders this section in place
+ * (the board/backlog re-render from their own store subscription).
+ * @param {ReturnType<import("./store.js").createStore>} store
+ * @param {string} storyId
+ */
+function buildDependencies(store, storyId) {
+  const section = el("div", "field deps-section");
+  section.append(el("label", "label", "Dependencies"));
+
+  const rows = el("div", "deps-rows");
+  const actions = el("div", "deps-actions");
+  const blocksBtn = el("button", "btn btn-ghost btn-sm", "This blocks…");
+  const needsBtn = el("button", "btn btn-ghost btn-sm", "This needs…");
+  blocksBtn.setAttribute("type", "button");
+  needsBtn.setAttribute("type", "button");
+  actions.append(needsBtn, blocksBtn);
+
+  const picker = el("div", "dep-picker");
+  picker.hidden = true;
+
+  section.append(rows, actions, picker);
+
+  /** Re-render the existing-link rows from current state. */
+  function renderRows() {
+    const state = store.getState();
+    const selfLoc = storyLocation(state, storyId);
+    rows.replaceChildren();
+    const items = depsForStory(state, storyId);
+    if (items.length === 0) {
+      const empty = el("p", "deps-empty", "No dependencies yet.");
+      rows.append(empty);
+      return;
+    }
+    for (const row of items) {
+      const r = el("div", "dep-row");
+      if (row.violation) r.classList.add("dep-row--violation");
+      r.append(el("span", "dep-badge mono", row.label));
+      r.append(el("span", "dep-dir", row.role === "needs" ? "needs" : "blocks"));
+      r.append(el("span", "dep-other", row.otherTitle));
+      let loc = locationLabel(state, row.otherLocation) ?? "";
+      if (row.violation && row.otherLocation?.kind === "sprint" && selfLoc?.kind === "sprint") {
+        loc += row.otherLocation.index < selfLoc.index ? ", before this" : ", after this";
+      }
+      r.append(el("span", "dep-loc mono", loc));
+      const remove = el("button", "btn btn-ghost btn-sm dep-remove", "✕");
+      remove.setAttribute("type", "button");
+      remove.setAttribute("aria-label", `Remove dependency ${row.label}`);
+      remove.addEventListener("click", () => {
+        store.dispatch(unlinkDep({ id: row.dep.id }));
+        renderRows();
+      });
+      r.append(remove);
+      rows.append(r);
+    }
+  }
+
+  /**
+   * Open the inline picker in a mode. mode "blocks": the current story is the
+   * blocker, the chosen target the blocked. mode "needs": the reverse.
+   * @param {"blocks" | "needs"} mode
+   */
+  function openPicker(mode) {
+    const state = store.getState();
+    picker.hidden = false;
+    picker.replaceChildren();
+
+    const search = /** @type {HTMLInputElement} */ (el("input", "input dep-search"));
+    search.type = "text";
+    search.placeholder = mode === "blocks" ? "Search a story this blocks…" : "Search a story this needs…";
+    picker.append(search);
+
+    const list = el("div", "dep-picker-list");
+    picker.append(list);
+
+    const targets = pickableDepTargets(state, storyId);
+
+    function renderList() {
+      const q = search.value.trim().toLowerCase();
+      const matched = q ? targets.filter((t) => t.title.toLowerCase().includes(q)) : targets;
+      list.replaceChildren();
+      if (matched.length === 0) {
+        list.append(el("p", "deps-empty", "No matching stories."));
+        return;
+      }
+      for (const group of groupByLocation(state, matched)) {
+        list.append(el("div", "dep-group-head mono", group.label));
+        for (const t of group.items) {
+          const opt = el("button", "btn btn-ghost btn-sm dep-option", t.title);
+          opt.setAttribute("type", "button");
+          opt.addEventListener("click", () => {
+            const payload =
+              mode === "blocks"
+                ? { blockerId: storyId, blockedId: t.id }
+                : { blockerId: t.id, blockedId: storyId };
+            store.dispatch(linkDep(payload));
+            picker.hidden = true;
+            picker.replaceChildren();
+            renderRows();
+          });
+          list.append(opt);
+        }
+      }
+    }
+
+    search.addEventListener("input", renderList);
+    renderList();
+    search.focus();
+  }
+
+  blocksBtn.addEventListener("click", () => openPicker("blocks"));
+  needsBtn.addEventListener("click", () => openPicker("needs"));
+
+  renderRows();
+  return section;
+}
+
+/**
+ * Group picker targets by location in board order: each sprint that has targets,
+ * then Backlog. @param {import("./store.js").PlanState} state
+ * @param {Array<{ id: string, title: string, location: any }>} targets
+ * @returns {Array<{ label: string, items: Array<{ id: string, title: string }> }>}
+ */
+function groupByLocation(state, targets) {
+  const groups = [];
+  state.sprints.forEach((sp, index) => {
+    const items = targets.filter((t) => t.location?.kind === "sprint" && t.location.index === index);
+    if (items.length) groups.push({ label: sp.name, items });
+  });
+  const backlog = targets.filter((t) => t.location?.kind === "backlog");
+  if (backlog.length) groups.push({ label: "Backlog", items: backlog });
+  return groups;
 }

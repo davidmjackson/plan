@@ -12,8 +12,8 @@
 
 import { isValidPoints } from "./validate.js";
 
-/** The schema version this build understands. Brief 7 bumps it (see migratePlan). */
-const CURRENT_SCHEMA = 1;
+/** The schema version this build understands. Brief 7: v2 adds the deps field. */
+const CURRENT_SCHEMA = 2;
 
 /** @param {any} v @returns {boolean} a plain (non-array) object */
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -64,6 +64,28 @@ export function validatePlan(plan) {
     }
   }
 
+  // Dependencies (Brief 7): an array of directed pairs, each linking two distinct
+  // existing stories, no duplicate pair. A dangling pair id is the one
+  // unforgivable load-boundary failure, so it is rejected here.
+  if (!Array.isArray(plan.deps)) return { ok: false, reason: `missing or invalid key: deps` };
+  const pairSeen = new Set();
+  for (const d of plan.deps) {
+    if (d.blockerId === d.blockedId) {
+      return { ok: false, reason: `dependency "${d.id}" links a story to itself` };
+    }
+    if (!(d.blockerId in plan.stories)) {
+      return { ok: false, reason: `dependency "${d.id}" references unknown story "${d.blockerId}"` };
+    }
+    if (!(d.blockedId in plan.stories)) {
+      return { ok: false, reason: `dependency "${d.id}" references unknown story "${d.blockedId}"` };
+    }
+    const key = `${d.blockerId}>${d.blockedId}`;
+    if (pairSeen.has(key)) {
+      return { ok: false, reason: `duplicate dependency between "${d.blockerId}" and "${d.blockedId}"` };
+    }
+    pairSeen.add(key);
+  }
+
   return { ok: true, plan };
 }
 
@@ -85,8 +107,14 @@ export function migratePlan(plan) {
   return { ok: true, plan: migrated };
 }
 
-/** Version-keyed migrators: migrators[n] upgrades a v(n) plan to v(n+1). Empty today. */
-const MIGRATORS = /** @type {Record<number, (plan: any) => any>} */ ({});
+/**
+ * Version-keyed migrators: migrators[n] upgrades a v(n) plan to v(n+1). Additive
+ * only, never deletes. v1->v2 (Brief 7) backfills the empty deps field and stamps
+ * the new version so a re-export carries it.
+ */
+const MIGRATORS = /** @type {Record<number, (plan: any) => any>} */ ({
+  1: (plan) => ({ ...plan, deps: [], meta: { ...plan.meta, schemaVersion: 2 } }),
+});
 
 /**
  * Build the self-identifying FILE payload (R2): a wrapper that lets a foreign or

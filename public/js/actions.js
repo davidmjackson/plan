@@ -26,6 +26,9 @@ export const ActionTypes = Object.freeze({
   DELETE_STORY: "DELETE_STORY",
   // Brief 3 — drag-and-drop placement
   MOVE_STORY: "MOVE_STORY",
+  // Brief 7 — dependencies (one directed pair, created/removed in the card editor)
+  LINK_DEP: "LINK_DEP",
+  UNLINK_DEP: "UNLINK_DEP",
 });
 
 /** @param {string} date */
@@ -69,3 +72,14 @@ export const deleteStory = (payload) => ({ type: ActionTypes.DELETE_STORY, paylo
 /** @typedef {{ kind: "backlog" } | { kind: "sprint", index: number }} MoveTarget */
 /** @param {{ storyId: string, target: MoveTarget, beforeId: string | null }} payload */
 export const moveStory = (payload) => ({ type: ActionTypes.MOVE_STORY, payload });
+
+// --- Brief 7: dependencies. The pair id is minted here (creator boundary); the
+// picker is the creation gate and validatePlan the load backstop, so the reducer
+// cases stay trivial (append / filter by id). blockerId = prerequisite (do
+// first); blockedId = dependent. ---
+
+/** @param {{ blockerId: string, blockedId: string }} fields */
+export const linkDep = ({ blockerId, blockedId }) =>
+  ({ type: ActionTypes.LINK_DEP, payload: { id: newId("dep"), blockerId, blockedId } });
+/** @param {{ id: string }} payload */
+export const unlinkDep = (payload) => ({ type: ActionTypes.UNLINK_DEP, payload });
