@@ -2,7 +2,7 @@
 
 A lightweight whiteboard that shows what your team can realistically deliver in the next 1-3 months, sprint by sprint, against your backlog.
 
-Part of the sprint tools suite: [sprintpoker.uk](https://sprintpoker.uk) | [sprintretro.uk](https://sprintretro.uk) | sprintplan.uk
+Part of the [Sprint Suite](https://sprintsuite.uk): [Sprintpoker](https://sprintpoker.uk) · [Sprintretro](https://sprintretro.uk) · [Sprintsignal](https://sprintsignal.uk) · [Sprintraid](https://sprintraid.uk) · Sprintplan (this app). A free, sign-in-free planning board you can also reach from the suite landing.
 
 ## What it does
 
