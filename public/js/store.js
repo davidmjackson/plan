@@ -17,6 +17,7 @@ import { PALETTE } from "./epic-palette.js";
  * @typedef {{ id: string, title: string, colourKey: string }} Epic
  * @typedef {{ id: string, title: string, summary: string, points: number, epicId: string | null }} Story
  *
+ * @typedef {{ id: string, blockerId: string, blockedId: string }} Dep
  * @typedef {Object} PlanState
  * @property {{ title: string | null, schemaVersion: number }} meta
  * @property {import("./plan-maths.js").PlanSettings} settings
@@ -24,6 +25,7 @@ import { PALETTE } from "./epic-palette.js";
  * @property {string[]} backlog
  * @property {Record<string, Epic>} epics
  * @property {Record<string, Story>} stories
+ * @property {Dep[]} deps  directed dependency pairs (Brief 7)
  * @property {string[]} lastReturnedStoryIds  transient: drives the "returned to backlog" toast
  */
 
@@ -42,12 +44,13 @@ const DEFAULT_SETTINGS = Object.freeze({
 export function createInitialState(startDate) {
   const settings = { startDate, ...DEFAULT_SETTINGS };
   return {
-    meta: { title: null, schemaVersion: 1 },
+    meta: { title: null, schemaVersion: 2 },
     settings,
     sprints: generateSprints(settings).map((s) => ({ ...s, placedStoryIds: [] })),
     backlog: [],
     epics: {},
     stories: {},
+    deps: [],
     lastReturnedStoryIds: [],
   };
 }
@@ -131,7 +134,10 @@ function moveStory(state, { storyId, target, beforeId }) {
  */
 function deleteStory(state, id) {
   const { [id]: _removed, ...stories } = state.stories;
-  return { ...state, stories, ...removeIdFromArrays(state, id), lastReturnedStoryIds: [] };
+  // R7: prune every pair referencing the removed id in the same step, so no
+  // dangling pair id survives (validatePlan would reject the next load).
+  const deps = state.deps.filter((d) => d.blockerId !== id && d.blockedId !== id);
+  return { ...state, stories, deps, ...removeIdFromArrays(state, id), lastReturnedStoryIds: [] };
 }
 
 /**
@@ -167,7 +173,9 @@ function deleteEpic(state, { id, mode }) {
     ...sp,
     placedStoryIds: sp.placedStoryIds.filter((sid) => !childIds.has(sid)),
   }));
-  return { ...state, epics, stories, backlog, sprints, lastReturnedStoryIds: [] };
+  // R7: prune every pair referencing a removed child, atomically with the delete.
+  const deps = state.deps.filter((d) => !childIds.has(d.blockerId) && !childIds.has(d.blockedId));
+  return { ...state, epics, stories, backlog, sprints, deps, lastReturnedStoryIds: [] };
 }
 
 /**
@@ -240,6 +248,16 @@ export function reduce(state, action) {
     // --- Brief 3: placement -----------------------------------------------
     case ActionTypes.MOVE_STORY:
       return moveStory(state, action.payload);
+
+    // --- Brief 7: dependencies (append a pair / filter by id) -------------
+    case ActionTypes.LINK_DEP:
+      return { ...state, deps: [...state.deps, action.payload], lastReturnedStoryIds: [] };
+    case ActionTypes.UNLINK_DEP:
+      return {
+        ...state,
+        deps: state.deps.filter((d) => d.id !== action.payload.id),
+        lastReturnedStoryIds: [],
+      };
 
     default:
       throw new Error(`unknown action: ${action.type}`);

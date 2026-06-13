@@ -27,6 +27,14 @@ function placedPlan() {
   return s; // a,b,c placed; d in backlog
 }
 
+/** A pre-Brief-7 v1 plan: no deps field, schemaVersion 1 (what an old save looks like). */
+function v1Plan() {
+  const p = placedPlan();
+  delete p.deps;
+  p.meta = { ...p.meta, schemaVersion: 1 };
+  return p;
+}
+
 // --- Case 1: fresh default plan validates ----------------------------------
 
 test("validatePlan: a fresh default plan passes", () => {
@@ -116,19 +124,84 @@ test("migratePlan: a missing schemaVersion fails", () => {
   assert.match(result.reason, /version/);
 });
 
-test("migratePlan: a schemaVersion newer than this build fails clearly", () => {
+// Case 4: the newer-version guard still holds after the v2 bump.
+test("migratePlan: a schemaVersion newer than this build (v3) fails clearly", () => {
   const plan = placedPlan();
-  plan.meta.schemaVersion = 2;
+  plan.meta.schemaVersion = 3;
   const result = migratePlan(plan);
   assert.equal(result.ok, false);
   assert.match(result.reason, /newer/);
 });
 
-test("migratePlan: schemaVersion 1 passes through", () => {
-  const plan = placedPlan();
+// Cases 1 + 2: the v1->v2 migrator adds the empty deps field, bumps the version,
+// and touches nothing else (the seam's first real use).
+test("migratePlan: a v1 plan gains deps [] and schemaVersion 2, other keys untouched", () => {
+  const plan = v1Plan();
+  const result = migratePlan(plan);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.plan.deps, []);
+  assert.equal(result.plan.meta.schemaVersion, 2);
+  assert.deepEqual(result.plan.stories, plan.stories); // representative key untouched
+  assert.deepEqual(result.plan.backlog, plan.backlog);
+});
+
+// Case 3: a v2 plan migrates as a no-op.
+test("migratePlan: a v2 plan passes through unchanged", () => {
+  const plan = placedPlan(); // already v2 (createInitialState seeds it)
   const result = migratePlan(plan);
   assert.equal(result.ok, true);
   assert.equal(result.plan, plan);
+});
+
+// --- Case 5: a fresh plan is v2 with an empty deps array -------------------
+
+test("createInitialState: a fresh plan is schemaVersion 2 with deps []", () => {
+  const s = createInitialState("2026-07-06");
+  assert.equal(s.meta.schemaVersion, 2);
+  assert.deepEqual(s.deps, []);
+});
+
+// --- Cases 6-10: validatePlan learns the deps field ------------------------
+
+test("validatePlan: a plan with one valid pair (two distinct existing ids) passes", () => {
+  const plan = placedPlan();
+  plan.deps = [{ id: "dep_1", blockerId: "a", blockedId: "b" }];
+  assert.equal(validatePlan(plan).ok, true);
+});
+
+test("validatePlan: a pair referencing an unknown story fails, naming that id", () => {
+  const plan = placedPlan();
+  plan.deps = [{ id: "dep_1", blockerId: "a", blockedId: "ghost" }];
+  const result = validatePlan(plan);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /ghost/);
+});
+
+test("validatePlan: a self-dependency (blocker === blocked) fails clearly", () => {
+  const plan = placedPlan();
+  plan.deps = [{ id: "dep_1", blockerId: "a", blockedId: "a" }];
+  const result = validatePlan(plan);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /itself/);
+});
+
+test("validatePlan: a duplicate pair (same blocker and blocked) fails clearly", () => {
+  const plan = placedPlan();
+  plan.deps = [
+    { id: "dep_1", blockerId: "a", blockedId: "b" },
+    { id: "dep_2", blockerId: "a", blockedId: "b" },
+  ];
+  const result = validatePlan(plan);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /duplicate/);
+});
+
+test("validatePlan: a non-array deps fails with a missing-or-invalid-key reason", () => {
+  const plan = placedPlan();
+  plan.deps = "nope";
+  const result = validatePlan(plan);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /deps/);
 });
 
 // --- Case 10: foreign file fails on import ---------------------------------
