@@ -46,7 +46,7 @@ As after Brief 7, plus **`connectorsToDraw(state)`** in `dep-selectors.js` (the 
 ### View / glue modules
 
 As after Brief 7, plus:
-- **`connectors.js` (new)** — the SVG overlay. `drawConnectors(state)` (called as renderBoard's last step), `hideConnectors()` / `redrawConnectors()` (the drag hooks), module-level `hoveredStoryId` + `suppressed`. Right-gutter cubic bows; a shared arrowhead marker (`fill: context-stroke`) at the blocked/dependent end follows the stroke colour. Tethers always visible; cross-sprint connectors on hover (R4).
+- **`connectors.js` (new)** — the SVG overlay. `drawConnectors(state)` (called as renderBoard's last step), `hideConnectors()` / `redrawConnectors()` (the drag hooks), module-level `svg`, `hoveredStoryId`, `lastState`, `wired`, `suppressed` (`lastState` lets a hover redraw recompute geometry with no new dispatch; `wired` guards the once-only delegated listener). Right-gutter cubic bows; a shared arrowhead marker (`fill: context-stroke`) at the blocked/dependent end follows the stroke colour. Tethers always visible; cross-sprint connectors on hover (R4).
 - **`render.js`** — `#board { position: relative }`; `drawConnectors(state)` as the last step of `renderBoard`.
 - **`drag.js`** — `hideConnectors()` on `d.on("drag")`, `redrawConnectors()` on `d.on("dragend")`. (NB: the drag lifecycle lives in `drag.js`, not `main.js` — `main.js` only calls `setupDrag()` after each render.)
 - **`backlog.js` `storyCard`** — adds `.bl-story--dep-violation` (any carried `badge.violation`) and `.dep-badge--violation` per badge. Signature unchanged (reads the flag it is already passed).
