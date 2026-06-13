@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/*.test.js",
+    "drift": "node /var/www/suite/shared/theme/check-theme-drift.mjs /var/www/plan",
+    "test": "npm run drift && node --test tests/*.test.js",
     "typecheck": "tsc --noEmit"
   },
   "license": "AGPL-3.0",
