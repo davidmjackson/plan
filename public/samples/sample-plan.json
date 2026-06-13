@@ -1,0 +1,403 @@
+{
+  "app": "sprintplan",
+  "schemaVersion": 2,
+  "exportedAt": "2026-06-13T12:00:00.000Z",
+  "plan": {
+    "meta": {
+      "title": "Sample: Customer portal rebuild (demo data)",
+      "schemaVersion": 2
+    },
+    "settings": {
+      "startDate": "2026-07-06",
+      "durationMonths": 3,
+      "sprintWeeks": 2,
+      "velocity": 20,
+      "bufferPct": 10
+    },
+    "sprints": [
+      {
+        "index": 0,
+        "name": "Sprint 1",
+        "startDate": "2026-07-06",
+        "endDate": "2026-07-19",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 1,
+        "name": "Sprint 2",
+        "startDate": "2026-07-20",
+        "endDate": "2026-08-02",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 2,
+        "name": "Sprint 3",
+        "startDate": "2026-08-03",
+        "endDate": "2026-08-16",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 3,
+        "name": "Sprint 4",
+        "startDate": "2026-08-17",
+        "endDate": "2026-08-30",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 4,
+        "name": "Sprint 5",
+        "startDate": "2026-08-31",
+        "endDate": "2026-09-13",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 5,
+        "name": "Sprint 6",
+        "startDate": "2026-09-14",
+        "endDate": "2026-09-27",
+        "days": 14,
+        "isPartial": false,
+        "placedStoryIds": []
+      },
+      {
+        "index": 6,
+        "name": "Sprint 7",
+        "startDate": "2026-09-28",
+        "endDate": "2026-10-06",
+        "days": 9,
+        "isPartial": true,
+        "placedStoryIds": []
+      }
+    ],
+    "backlog": [
+      "story_1xub87txez",
+      "story_bxwepf1dn2",
+      "story_11x5ug8qe6",
+      "story_v6832wux30",
+      "story_8g2pp0j5u5",
+      "story_7ezxk788b1",
+      "story_1enu2mt1op",
+      "story_lmcszif1dx",
+      "story_14xfi3h10c",
+      "story_j8nxeo5ebl",
+      "story_1sna9el1ew",
+      "story_3ebeb516yc",
+      "story_hfpgvhgh2t",
+      "story_wwnf5y1vfo",
+      "story_mju73h1yav",
+      "story_kr89azi7p9",
+      "story_11wafgblw3",
+      "story_17kavkg1o0",
+      "story_1ms7pir5bb",
+      "story_5hwem01hpo",
+      "story_1y7mc01wnf",
+      "story_ab8ke61eh7",
+      "story_1wlwiqm1cy",
+      "story_9uj3a611sq",
+      "story_11iuk69dg1",
+      "story_1cyvvns1em",
+      "story_1uoktjv6bs",
+      "story_1tacl22jwb",
+      "story_w62stcmyxx",
+      "story_jahbtf1k2c",
+      "story_sa6xjl36ec",
+      "story_tbcs0111kf",
+      "story_vcu8j3l6ba",
+      "story_1v0bu9m1c0"
+    ],
+    "epics": {
+      "epic_13vqsyvl3g": {
+        "id": "epic_13vqsyvl3g",
+        "title": "Authentication & accounts",
+        "colourKey": "plum"
+      },
+      "epic_71zudj1yrx": {
+        "id": "epic_71zudj1yrx",
+        "title": "Customer dashboard",
+        "colourKey": "violet"
+      },
+      "epic_188vh4a3k7": {
+        "id": "epic_188vh4a3k7",
+        "title": "Billing & subscriptions",
+        "colourKey": "indigo"
+      },
+      "epic_anheps82w6": {
+        "id": "epic_anheps82w6",
+        "title": "Notifications & messaging",
+        "colourKey": "teal"
+      },
+      "epic_1ceahw1ebu": {
+        "id": "epic_1ceahw1ebu",
+        "title": "Admin & back-office",
+        "colourKey": "cyan"
+      },
+      "epic_1ckfo2u133": {
+        "id": "epic_1ckfo2u133",
+        "title": "Platform, CI/CD & observability",
+        "colourKey": "green"
+      },
+      "epic_1t4rzf711i": {
+        "id": "epic_1t4rzf711i",
+        "title": "Search & reporting",
+        "colourKey": "moss"
+      },
+      "epic_174gxtb1fa": {
+        "id": "epic_174gxtb1fa",
+        "title": "Onboarding & UX polish",
+        "colourKey": "magenta"
+      }
+    },
+    "stories": {
+      "story_1xub87txez": {
+        "id": "story_1xub87txez",
+        "title": "Email + password sign-up",
+        "summary": "Registration form with validation, password hashing (argon2) and a verification email.",
+        "points": 3,
+        "epicId": "epic_13vqsyvl3g"
+      },
+      "story_bxwepf1dn2": {
+        "id": "story_bxwepf1dn2",
+        "title": "Passwordless magic-link login",
+        "summary": "Issue a signed one-time link by email; consume it to start a session. Covers expiry and replay.",
+        "points": 5,
+        "epicId": "epic_13vqsyvl3g"
+      },
+      "story_11x5ug8qe6": {
+        "id": "story_11x5ug8qe6",
+        "title": "OAuth sign-in (Google, Microsoft)",
+        "summary": "Add social login via OIDC, linking to existing accounts by verified email.",
+        "points": 5,
+        "epicId": "epic_13vqsyvl3g"
+      },
+      "story_v6832wux30": {
+        "id": "story_v6832wux30",
+        "title": "Password reset flow",
+        "summary": "Request-reset email, tokenised reset page, and session invalidation on change.",
+        "points": 2,
+        "epicId": "epic_13vqsyvl3g"
+      },
+      "story_8g2pp0j5u5": {
+        "id": "story_8g2pp0j5u5",
+        "title": "Account settings & profile",
+        "summary": "Let users edit name, avatar, email (with re-verification) and delete their account.",
+        "points": 3,
+        "epicId": "epic_13vqsyvl3g"
+      },
+      "story_7ezxk788b1": {
+        "id": "story_7ezxk788b1",
+        "title": "Dashboard shell & navigation",
+        "summary": "Responsive app shell: sidebar, top bar, route skeletons and empty states.",
+        "points": 3,
+        "epicId": "epic_71zudj1yrx"
+      },
+      "story_1enu2mt1op": {
+        "id": "story_1enu2mt1op",
+        "title": "Overview widgets",
+        "summary": "Usage, recent activity and quick-action cards driven by the metrics API.",
+        "points": 5,
+        "epicId": "epic_71zudj1yrx"
+      },
+      "story_lmcszif1dx": {
+        "id": "story_lmcszif1dx",
+        "title": "Saved views & filters",
+        "summary": "Let users filter their data and persist named views per account.",
+        "points": 3,
+        "epicId": "epic_71zudj1yrx"
+      },
+      "story_14xfi3h10c": {
+        "id": "story_14xfi3h10c",
+        "title": "Dark mode & theming",
+        "summary": "Token-based theme with a system/dark/light toggle persisted per user.",
+        "points": 2,
+        "epicId": "epic_71zudj1yrx"
+      },
+      "story_j8nxeo5ebl": {
+        "id": "story_j8nxeo5ebl",
+        "title": "Stripe checkout integration",
+        "summary": "Create checkout sessions, handle success/cancel and store the customer id.",
+        "points": 8,
+        "epicId": "epic_188vh4a3k7"
+      },
+      "story_1sna9el1ew": {
+        "id": "story_1sna9el1ew",
+        "title": "Subscription plans & upgrades",
+        "summary": "Plan selection, proration on upgrade/downgrade and seat counts.",
+        "points": 5,
+        "epicId": "epic_188vh4a3k7"
+      },
+      "story_3ebeb516yc": {
+        "id": "story_3ebeb516yc",
+        "title": "Invoices & billing history",
+        "summary": "List past invoices with PDF download, pulled from Stripe.",
+        "points": 3,
+        "epicId": "epic_188vh4a3k7"
+      },
+      "story_hfpgvhgh2t": {
+        "id": "story_hfpgvhgh2t",
+        "title": "Dunning & failed payments",
+        "summary": "Retry schedule, in-app banners and email nudges on payment failure.",
+        "points": 5,
+        "epicId": "epic_188vh4a3k7"
+      },
+      "story_wwnf5y1vfo": {
+        "id": "story_wwnf5y1vfo",
+        "title": "Webhook processing",
+        "summary": "Verify and idempotently process Stripe webhooks (subscription + invoice events).",
+        "points": 3,
+        "epicId": "epic_188vh4a3k7"
+      },
+      "story_mju73h1yav": {
+        "id": "story_mju73h1yav",
+        "title": "Transactional email service",
+        "summary": "Templated email sending via the provider with retries and a send log.",
+        "points": 3,
+        "epicId": "epic_anheps82w6"
+      },
+      "story_kr89azi7p9": {
+        "id": "story_kr89azi7p9",
+        "title": "In-app notification centre",
+        "summary": "Bell menu, unread counts and a notifications API with read/dismiss.",
+        "points": 5,
+        "epicId": "epic_anheps82w6"
+      },
+      "story_11wafgblw3": {
+        "id": "story_11wafgblw3",
+        "title": "User notification preferences",
+        "summary": "Per-channel, per-type opt-in/out stored against the account.",
+        "points": 2,
+        "epicId": "epic_anheps82w6"
+      },
+      "story_17kavkg1o0": {
+        "id": "story_17kavkg1o0",
+        "title": "Weekly digest email",
+        "summary": "Scheduled summary of account activity, respecting preferences.",
+        "points": 3,
+        "epicId": "epic_anheps82w6"
+      },
+      "story_1ms7pir5bb": {
+        "id": "story_1ms7pir5bb",
+        "title": "Admin user management",
+        "summary": "Search, view, disable and impersonate users; audit each action.",
+        "points": 5,
+        "epicId": "epic_1ceahw1ebu"
+      },
+      "story_5hwem01hpo": {
+        "id": "story_5hwem01hpo",
+        "title": "Feature flags & rollout",
+        "summary": "Toggle features per environment and per cohort without a deploy.",
+        "points": 3,
+        "epicId": "epic_1ceahw1ebu"
+      },
+      "story_1y7mc01wnf": {
+        "id": "story_1y7mc01wnf",
+        "title": "Audit log viewer",
+        "summary": "Searchable, filterable record of sensitive actions for support and compliance.",
+        "points": 3,
+        "epicId": "epic_1ceahw1ebu"
+      },
+      "story_ab8ke61eh7": {
+        "id": "story_ab8ke61eh7",
+        "title": "Support impersonation guardrails",
+        "summary": "Time-boxed, logged impersonation with a visible banner and consent gate.",
+        "points": 2,
+        "epicId": "epic_1ceahw1ebu"
+      },
+      "story_1wlwiqm1cy": {
+        "id": "story_1wlwiqm1cy",
+        "title": "CI pipeline (lint, test, build)",
+        "summary": "Run lint, unit tests and a build on every PR; block merge on failure.",
+        "points": 3,
+        "epicId": "epic_1ckfo2u133"
+      },
+      "story_9uj3a611sq": {
+        "id": "story_9uj3a611sq",
+        "title": "Containerise & deploy",
+        "summary": "Dockerise the app and wire a staging + production deploy with rollback.",
+        "points": 5,
+        "epicId": "epic_1ckfo2u133"
+      },
+      "story_11iuk69dg1": {
+        "id": "story_11iuk69dg1",
+        "title": "Structured logging & tracing",
+        "summary": "Correlation ids, structured logs and request tracing across services.",
+        "points": 5,
+        "epicId": "epic_1ckfo2u133"
+      },
+      "story_1cyvvns1em": {
+        "id": "story_1cyvvns1em",
+        "title": "Error monitoring & alerts",
+        "summary": "Capture exceptions, group them and alert on new/spiking issues.",
+        "points": 3,
+        "epicId": "epic_1ckfo2u133"
+      },
+      "story_1uoktjv6bs": {
+        "id": "story_1uoktjv6bs",
+        "title": "Database migrations & backups",
+        "summary": "Versioned migrations in CI and automated, restored-tested backups.",
+        "points": 3,
+        "epicId": "epic_1ckfo2u133"
+      },
+      "story_1tacl22jwb": {
+        "id": "story_1tacl22jwb",
+        "title": "Global search",
+        "summary": "Indexed search across accounts, records and docs with typeahead.",
+        "points": 5,
+        "epicId": "epic_1t4rzf711i"
+      },
+      "story_w62stcmyxx": {
+        "id": "story_w62stcmyxx",
+        "title": "Exportable reports (CSV)",
+        "summary": "Build and download filtered CSV reports of account data.",
+        "points": 3,
+        "epicId": "epic_1t4rzf711i"
+      },
+      "story_jahbtf1k2c": {
+        "id": "story_jahbtf1k2c",
+        "title": "Scheduled report emails",
+        "summary": "Let users schedule a saved report to arrive by email.",
+        "points": 3,
+        "epicId": "epic_1t4rzf711i"
+      },
+      "story_sa6xjl36ec": {
+        "id": "story_sa6xjl36ec",
+        "title": "First-run onboarding checklist",
+        "summary": "A guided checklist that tracks setup steps and celebrates completion.",
+        "points": 3,
+        "epicId": "epic_174gxtb1fa"
+      },
+      "story_tbcs0111kf": {
+        "id": "story_tbcs0111kf",
+        "title": "Empty-state illustrations & copy",
+        "summary": "Helpful, on-brand empty states across the main screens.",
+        "points": 2,
+        "epicId": "epic_174gxtb1fa"
+      },
+      "story_vcu8j3l6ba": {
+        "id": "story_vcu8j3l6ba",
+        "title": "Keyboard shortcuts & a11y pass",
+        "summary": "Add shortcuts and fix the worst accessibility gaps (focus, labels, contrast).",
+        "points": 3,
+        "epicId": "epic_174gxtb1fa"
+      },
+      "story_1v0bu9m1c0": {
+        "id": "story_1v0bu9m1c0",
+        "title": "Performance budget & polish",
+        "summary": "Set a performance budget and fix the largest bundle and render regressions.",
+        "points": 5,
+        "epicId": "epic_174gxtb1fa"
+      }
+    },
+    "deps": [],
+    "lastReturnedStoryIds": []
+  }
+}
