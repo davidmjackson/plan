@@ -20,6 +20,18 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-15 - 🚀 LAUNCHED: Phase 2 multiplayer LIVE on sprintplan.uk (UAT passed, cross-browser)
+
+- **Task brief**: execute the MP6 runbook on the live box and bring multiplayer online. Driven through David's terminal one command at a time (live/remote rules).
+- **AI contribution**: Walked the full deploy — registered plan with the hub (suite #8: api key, ALLOWED_APP_DOMAINS, launch.js APP_DOMAIN, test env); pulled + dep-installed plan on the box (`npm ci --omit=dev`; `@suite/auth-client` via `--no-save` so its express 5 nests without diverging package.json); created the hardened `sprintplan-rooms` systemd service (dedicated user, ProtectSystem/ProtectHome, EnvironmentFile) mirroring suite-hub; added the apache same-origin reverse proxy (ws upgrade + /rooms + /auth/* + /api/heartbeat → 127.0.0.1:3014); granted the entitlement. **UAT: launched plan from the Suite dashboard → authed session → Collaborate (open-link) → share link → co-edited live in Edge + Chrome. All works.**
+- **Human contribution**: Drove every live command, ran the UAT across two browsers, and made the launch-time director calls (dedicated hardened user; reverse the Brief 10 free tile to a launched app; launch + entitlement grant).
+- **Friction (the valuable part — three real launch-time bugs)**:
+  1. **The hub tile was a dead end.** Brief 10 made plan's dashboard tile a *free direct link* to sprintplan.uk — no SSO launch, so no session, so "Create room" 302'd to login and `fetch` threw ("couldn't reach"). Fixed by reversing it to a launched app (suite #9) — the Phase-2 "requires an account" ruling, made real.
+  2. **API-key placeholders shipped literally.** Both `HUB_API_KEY_PLAN` (hub .env) and `HUB_API_KEY` (.env.rooms) still held the `PASTE_SECRET`/`PASTE_THE_SAME_HEX` placeholders — the generated hex was never substituted — so `/api/sessions/exchange` 401'd. Root cause: handing a human a placeholder to substitute is fragile (it was pasted verbatim three times). Fixed by generating into a shell variable and writing BOTH files from `$SECRET` — identical by construction, no manual paste. **Lesson logged: for shared secrets across files, never hand-substitute — generate-into-a-var.**
+  3. **`requireAuth` 302 vs the client's 401 assumption.** The real auth-client redirects unauthed requests (302) where the stub returned 401, so the unauthed-collaborate path showed a generic error instead of the sign-in prompt. Fixed `collaborate.js` (`redirect:"manual"` + detect opaqueredirect/0/401). Also hit a readonly-DB error granting the entitlement (the DB is `suite-hub`-owned — ran the one-off as root).
+- **Verdict**: LIVE. The whole Phase 2 arc — spike → MP1 sync → MP2 auth → MP3 field-delta → MP4 bridge → MP5 presence → MP6 deploy → launch — is in production and co-editing works across browsers. The deploy surfaced exactly the integration seams the plan-side-only slices couldn't (the hub tile model, the secret wiring, the 302); all now closed. **Open follow-ups: company-level entitlement (currently just the launcher's user); vendor `@suite/auth-client` so `npm ci` redeploys stay clean.**
+- **Time**: ~1 session (the launch walkthrough).
+
 ### 2026-06-15 - Productionise slice MP6 — the live launch (deploy artifacts + hand-off)
 
 - **Task brief**: docs/phase2-mp6-deploy-brief.md - make the multiplayer service deployable and document the launch. The in-repo artifacts (entrypoint, systemd unit, apache reverse-proxy, a liveness route) are built here; the parts that go live (the HUB_API_KEY_PLAN secret, the suite/hub PR, the hub deploy, the live box) are the director's, captured in a single ordered runbook. No multiplayer behaviour change.
