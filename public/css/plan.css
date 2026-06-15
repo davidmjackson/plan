@@ -1027,3 +1027,22 @@
   border-color: var(--plum);
   box-shadow: 0 0 0 3px var(--plumwash);
 }
+
+/* MP4 — collaborate dialog: a short hint + a stacked blend-mode picker. Reuses
+   the modal .field/.btn vocabulary; only the radio layout is new. */
+.field-hint {
+  font-size: 13px;
+  color: var(--ink-soft, #555);
+  margin: 0 0 4px;
+}
+.collab-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.collab-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}

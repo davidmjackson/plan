@@ -7,6 +7,7 @@
 
 import { createStore, createInitialState } from "./store.js";
 import { createRoomStore, wsTransport } from "./sync-client.js";
+import { wireCollaborate } from "./collaborate.js";
 import {
   setStartDate,
   setDurationMonths,
@@ -332,6 +333,14 @@ function downloadRaw(/** @type {string} */ text) {
 }
 
 document.getElementById("tb-export")?.addEventListener("click", () => downloadBoard(store.getState()));
+
+// Collaborate (MP4): create a shared room from the current plan. Hidden inside a
+// room (you are already collaborating); in local mode it offers to start one.
+const collabBtn = document.getElementById("tb-collaborate");
+if (collabBtn) {
+  if (IN_ROOM) collabBtn.hidden = true;
+  else wireCollaborate({ button: collabBtn, getPlan: () => store.getState(), flash });
+}
 
 // --- Report export (Brief 9, P0 #6, ruling G8): its OWN control, distinct from
 // the board .json Save/Import above. A PURE READ (R2) — it runs reportModel over

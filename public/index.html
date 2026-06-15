@@ -32,6 +32,10 @@
         <button type="button" class="btn btn-ghost btn-sm" id="tb-import">Import board</button>
         <input type="file" id="board-file" accept="application/json,.json" hidden />
         <span class="tbacts-sep" aria-hidden="true"></span>
+        <!-- MP4: create a live shared room from this plan (requires an account;
+             an unauthed create surfaces a sign-in toast). Hidden inside a room. -->
+        <button type="button" class="btn btn-pri btn-sm" id="tb-collaborate">Collaborate live</button>
+        <span class="tbacts-sep" aria-hidden="true"></span>
         <!-- Static, account-free return to the suite hub (Brief 10 R4): sprintplan
              ships no auth-client, so this link is always visible, never gated. -->
         <a class="btn btn-ghost btn-sm suite-return" href="https://sprintsuite.uk">
