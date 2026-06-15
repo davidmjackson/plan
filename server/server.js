@@ -78,6 +78,10 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
   // handled separately on the http server, independent of express routing.
   const app = express();
   app.use(express.json());
+
+  // Liveness (MP6 R5): unauthed, cheap — for systemd/monitoring.
+  app.get("/health", (/** @type {any} */ _req, /** @type {any} */ res) => res.json({ ok: true }));
+
   provider.mountRoutes(app);
 
   // POST /rooms — authed room creation (MP2 R4). A company-only room is scoped to
