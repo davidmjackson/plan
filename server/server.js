@@ -22,8 +22,9 @@ import { WebSocketServer } from "ws";
 
 import { loadRoom, createRoom } from "./db.js";
 import { applyOp } from "./rooms.js";
-import { verifySession } from "./auth-seam.js";
+import { createAuthProvider } from "./auth.js";
 import { createInitialState } from "../public/js/store.js";
+import { newId } from "../public/js/ids.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -60,18 +61,40 @@ export function decideUpgrade(room, session, token) {
  *   port?: number,
  *   serveStatic?: boolean,
  *   seedRoom?: { id: string, companyId: string, shareToken: string, mode: string } | null,
+ *   auth?: any,
  * }} opts
  * @returns {Promise<{ url: string, httpUrl: string, close: () => void }>}
  */
-export function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom = null }) {
+export async function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom = null, auth = null }) {
+  const provider = auth ?? (await createAuthProvider(process.env));
+
   if (seedRoom && !loadRoom(db, seedRoom.id)) {
     createRoom(db, { ...seedRoom, doc: createInitialState("2026-01-05") });
   }
 
-  const requestHandler = serveStatic
-    ? express().use(express.static(pathJoin(__dirname, "..", "public")))
-    : (/** @type {any} */ _req, /** @type {any} */ res) => { res.writeHead(426); res.end("Upgrade Required"); };
-  const httpServer = createServer(requestHandler);
+  // Always an express app: it carries the auth routes (real provider) and the
+  // authed room-creation endpoint; static serving is opt-in. The ws upgrade is
+  // handled separately on the http server, independent of express routing.
+  const app = express();
+  app.use(express.json());
+  provider.mountRoutes(app);
+
+  // POST /rooms — authed room creation (MP2 R4). A company-only room is scoped to
+  // the MANAGER's session company, never a client-supplied value. Open-link rooms
+  // are also manager-created; only their JOIN policy differs.
+  app.post("/rooms", provider.requireAuth, (/** @type {any} */ req, /** @type {any} */ res) => {
+    const companyId = provider.companyOf(req);
+    if (!companyId) return res.status(403).json({ error: "no company on session" });
+    const mode = req.body?.mode === "open-link" ? "open-link" : "company-only";
+    const id = `${companyId}-${newId("room")}`;
+    const shareToken = newId("share");
+    createRoom(db, { id, companyId, shareToken, mode, doc: createInitialState("2026-01-05") });
+    res.json({ id, companyId, shareToken, mode });
+  });
+
+  if (serveStatic) app.use(express.static(pathJoin(__dirname, "..", "public")));
+
+  const httpServer = createServer(app);
   const wss = new WebSocketServer({ noServer: true });
 
   /** @type {Map<string, any>} authoritative in-memory rooms */
@@ -96,13 +119,13 @@ export function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom =
     for (const ws of sockets.get(id) ?? []) ws.send(json);
   };
 
-  httpServer.on("upgrade", (req, socket, head) => {
+  httpServer.on("upgrade", async (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const roomId = url.searchParams.get("room") ?? "";
     const token = url.searchParams.get("token");
     const name = url.searchParams.get("name") ?? "guest";
     const room = getRoom(roomId);
-    const session = verifySession(req.headers);
+    const session = await provider.verifySession(req.headers);
 
     const decision = decideUpgrade(room, session, token);
     if (!decision.ok) {
