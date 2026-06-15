@@ -143,25 +143,43 @@ test("case 4: crash mid-flight — reopened db reflects exactly the acked ops", 
   } finally { cleanup(); }
 });
 
-test("case 5: stale EDIT_STORY is rejected — the winner is not clobbered", () => {
+test("case 5: concurrent EDIT_STORY — different fields MERGE, same field is last-write-wins", () => {
   const { db, cleanup } = freshDb();
   try {
-    const room = seedRoom(db, seedDoc([addStory("S1", { title: "orig" })]));
-    const base = room.version;
+    const room = seedRoom(db, seedDoc([addStory("S1", { title: "orig" })])); // points 3
 
-    const a = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "A", summary: "", points: 3, epicId: null }, baseVersion: base });
+    // A changes only the title, B changes only the points — partial payloads (deltas),
+    // applied in arrival order. The server merges each against the latest story.
+    const a = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "fromA" }, baseVersion: room.version });
+    const b = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", points: 8 }, baseVersion: room.version });
     assert.equal(a.ok, true);
-    // B edited against the now-stale base version.
-    const b = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "B", summary: "", points: 3, epicId: null }, baseVersion: base });
-    assert.equal(b.ok, false, "stale edit must be rejected");
-    assert.match(b.reason, /stale/);
+    assert.equal(b.ok, true);
 
-    const reloaded = loadRoom(db, "acme-q3").doc;
-    assert.equal(reloaded.stories.S1.title, "A", "A's edit survives; B did not silently clobber");
-    // A fresh (non-stale) edit succeeds.
-    const c = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "C", summary: "", points: 3, epicId: null }, baseVersion: room.version });
-    assert.equal(c.ok, true);
-    assert.equal(loadRoom(db, "acme-q3").doc.stories.S1.title, "C");
+    let reloaded = loadRoom(db, "acme-q3").doc;
+    assert.equal(reloaded.stories.S1.title, "fromA", "A's title survives B's points edit (merge)");
+    assert.equal(reloaded.stories.S1.points, 8, "B's points survive A's title edit (merge)");
+    assert.equal(validatePlan(reloaded).ok, true);
+
+    // Same field from two editors: last write wins, no reject.
+    assert.equal(applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "x" }, baseVersion: room.version }).ok, true);
+    assert.equal(applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "y" }, baseVersion: room.version }).ok, true);
+    reloaded = loadRoom(db, "acme-q3").doc;
+    assert.equal(reloaded.stories.S1.title, "y");
+  } finally { cleanup(); }
+});
+
+test("case 5b: an EDIT_STORY delta naming a deleted story is rejected — no silent resurrect", () => {
+  const { db, cleanup } = freshDb();
+  try {
+    const room = seedRoom(db, seedDoc([addStory("S1")]));
+    assert.equal(applyOp(db, room, { type: "DELETE_STORY", payload: { id: "S1" }, baseVersion: room.version }).ok, true);
+
+    // Merged against a now-absent story, the partial lacks points → validatePlan rejects.
+    const late = applyOp(db, room, { type: "EDIT_STORY", payload: { id: "S1", title: "zombie" }, baseVersion: room.version });
+    assert.equal(late.ok, false);
+    assert.match(late.reason, /unknown epic|points/); // the partial fails validatePlan
+
+    assert.equal("S1" in loadRoom(db, "acme-q3").doc.stories, false, "deleted story not resurrected");
   } finally { cleanup(); }
 });
 

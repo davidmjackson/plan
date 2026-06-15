@@ -106,3 +106,27 @@ test("a 'nack' frame calls onNack and changes neither doc nor version", () => {
   store.dispatch(addStory("S2"));
   assert.equal(t.sent.at(-1).baseVersion, 5, "version unchanged on nack");
 });
+
+test("EDIT_STORY dispatch sends ONLY the changed fields as a delta (MP3)", () => {
+  const t = fakeTransport();
+  const store = createRoomStore({ transport: t });
+  t.receive(stateFrame(5)); // S1 = { title:"S1", summary:"", points:3, epicId:null }
+
+  // The editor submits the whole story; only points actually changed.
+  store.dispatch({ type: "EDIT_STORY", payload: { id: "S1", title: "S1", summary: "", points: 9, epicId: null } });
+
+  const sent = t.sent.at(-1);
+  assert.equal(sent.op.type, "EDIT_STORY");
+  assert.deepEqual(sent.op.payload, { id: "S1", points: 9 }, "id + only the changed field");
+});
+
+test("EDIT_STORY delta carries every changed field and omits unchanged ones", () => {
+  const t = fakeTransport();
+  const store = createRoomStore({ transport: t });
+  t.receive(stateFrame(5));
+
+  store.dispatch({ type: "EDIT_STORY", payload: { id: "S1", title: "new", summary: "added", points: 3, epicId: null } });
+
+  // title + summary changed; points + epicId unchanged → omitted.
+  assert.deepEqual(t.sent.at(-1).op.payload, { id: "S1", title: "new", summary: "added" });
+});

@@ -83,28 +83,24 @@ test("two clients converge: ADD then MOVE then EDIT in A appears in B", async ()
   A.store.close(); B.store.close();
 });
 
-test("concurrent EDIT of the same story: one wins, the other is nacked stale, both converge", async () => {
+test("concurrent EDIT of DIFFERENT fields merges through the real client; no nack (MP3)", async () => {
   const A = await connectStore("A");
   const B = await connectStore("B");
 
   // seed a story and let both clients settle on the same version
-  A.store.dispatch(addStory("S2"));
+  A.store.dispatch(addStory("S2")); // title "S2", points 3
   await until(() => "S2" in A.store.getState().stories && "S2" in B.store.getState().stories);
 
-  A.store.dispatch(editStory("S2", "fromA"));
-  B.store.dispatch(editStory("S2", "fromB"));
-  await wait(200);
+  // Dispatched back-to-back (no await between), so each client computes its delta
+  // against the same pre-broadcast state: A changes only the title, B only points.
+  A.store.dispatch(editStory("S2", "renamed")); // -> delta { id, title }
+  B.store.dispatch({ type: "EDIT_STORY", payload: { id: "S2", title: "S2", summary: "", points: 7, epicId: null } }); // -> delta { id, points }
 
-  const total = A.nacks.length + B.nacks.length;
-  assert.equal(total, 1, "exactly one client was nacked");
-  const loser = A.nacks.length ? A : B;
-  assert.match(loser.nacks[0], /stale/);
-
-  // both stores converge to the winner's value
-  const a = A.store.getState().stories.S2.title;
-  const b = B.store.getState().stories.S2.title;
-  assert.equal(a, b, "both clients show the same title");
-  assert.ok(a === "fromA" || a === "fromB");
+  await until(() =>
+    A.store.getState().stories.S2.title === "renamed" && A.store.getState().stories.S2.points === 7 &&
+    B.store.getState().stories.S2.title === "renamed" && B.store.getState().stories.S2.points === 7,
+  );
+  assert.equal(A.nacks.length + B.nacks.length, 0, "no nack — different fields merge");
 
   A.store.close(); B.store.close();
 });
