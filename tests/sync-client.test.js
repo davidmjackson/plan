@@ -130,3 +130,19 @@ test("EDIT_STORY delta carries every changed field and omits unchanged ones", ()
   // title + summary changed; points + epicId unchanged → omitted.
   assert.deepEqual(t.sent.at(-1).op.payload, { id: "S1", title: "new", summary: "added" });
 });
+
+test("a 'presence' frame invokes onPresence and does not touch plan state/version (MP5)", () => {
+  const t = fakeTransport();
+  let presence = null;
+  const store = createRoomStore({ transport: t, onPresence: (p) => { presence = p; } });
+  t.receive(stateFrame(5));
+  const before = store.getState();
+
+  const list = [{ id: "p1", name: "Ann", identity: "verified" }, { id: "p2", name: "Guest", identity: "claimed" }];
+  t.receive({ type: "presence", participants: list });
+
+  assert.deepEqual(presence, list);
+  assert.equal(store.getState(), before, "plan state unchanged by presence");
+  store.dispatch(addStory("S2"));
+  assert.equal(t.sent.at(-1).baseVersion, 5, "version unchanged by presence");
+});
