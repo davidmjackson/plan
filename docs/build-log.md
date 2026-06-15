@@ -20,7 +20,7 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
-### 2026-06-15 - Productionise slice MP5 — presence (who's in the room) [DRAFT, awaiting sign-off]
+### 2026-06-15 - Productionise slice MP5 — presence (who's in the room)
 
 - **Task brief**: docs/phase2-mp5-presence-brief.md - show everyone in a room who else is here, split out of MP4 as its own thin slice. The server already held a per-room socket set and each socket's identity; this slice broadcasts the participant list on join/leave and the client renders a presence strip.
 - **AI contribution**: Server — mint a stable participantId per ws upgrade; a `broadcastPresence(roomId)` derives `{id,name,identity}` from the socket set and is sent on every join (after the state frame) and leave. Client — `sync-client` routes a `presence` frame to a new `onPresence(participants)` callback that does NOT touch plan state/version (side-channel, R2); main.js renders a `#presence` topbar strip (initial chips, a "(guest)" marker for claimed/open-link joiners so a self-asserted name is never read as a member), room-mode only. TDD: sync-client onPresence unit (plan state untouched), and a two-real-client integration test (join lists both, leave drops to one, open-link guest = "claimed"). 183/183, typecheck + drift clean. Browser run (two contexts): both names appear, guest marked, drops on leave, strip hidden in local mode, zero console errors.
