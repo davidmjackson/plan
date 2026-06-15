@@ -17,36 +17,47 @@ import { reduce } from "../public/js/store.js";
 import { validatePlan } from "../public/js/plan-io.js";
 import { commitRoom } from "./db.js";
 
-/** The 8 ops that serialise safely under arrival order + validatePlan. */
-const UNGATED = new Set([
+/**
+ * The 9 wire ops. All serialise safely under arrival order + validatePlan; EDIT_STORY
+ * is a field-delta merged against the latest story (MP3), so it needs no version gate.
+ */
+const ALLOWED = new Set([
   "ADD_EPIC", "EDIT_EPIC", "DELETE_EPIC",
-  "ADD_STORY", "DELETE_STORY", "MOVE_STORY",
+  "ADD_STORY", "EDIT_STORY", "DELETE_STORY", "MOVE_STORY",
   "LINK_DEP", "UNLINK_DEP",
 ]);
-/** The 1 op with whole-record value-semantics, so it gets optimistic version rejection. */
-const GATED = new Set(["EDIT_STORY"]);
 
-/** @typedef {{ ok: true, version: number } | { ok: false, reason: string }} OpResult */
+/** @typedef {{ ok: true, version: number, op: { type: string, payload: any } } | { ok: false, reason: string }} OpResult */
 
 /**
  * Apply one op to the room's authoritative document, persisting before return.
  * Mutates `room.doc`/`room.version` on success; leaves them untouched on reject.
+ *
+ * EDIT_STORY is a field-delta (MP3): the client sends only the changed fields, and
+ * we merge them onto the LATEST authoritative story before reduce, so concurrent
+ * edits to DIFFERENT fields compose and same-field edits are last-write-wins. The
+ * EFFECTIVE (merged) op is returned so the server broadcasts a complete payload —
+ * the shipped reducer replaces all four story fields, so a bare delta would null
+ * the untouched ones on every client.
  * @param {import("better-sqlite3").Database} db
  * @param {{ id: string, doc: any, version: number }} room
- * @param {{ type: string, payload: any, baseVersion?: number }} op
+ * @param {{ type: string, payload: any }} op
  * @returns {OpResult}
  */
-export function applyOp(db, room, { type, payload, baseVersion }) {
-  if (!UNGATED.has(type) && !GATED.has(type)) {
+export function applyOp(db, room, { type, payload }) {
+  if (!ALLOWED.has(type)) {
     return { ok: false, reason: `op type not allowed: ${type}` };
   }
-  if (GATED.has(type) && baseVersion !== room.version) {
-    return { ok: false, reason: `stale: room at version ${room.version}` };
+
+  let effPayload = payload;
+  if (type === "EDIT_STORY") {
+    const cur = room.doc.stories[payload?.id];
+    effPayload = cur ? { ...cur, ...payload } : payload; // merge delta onto latest
   }
 
   let next;
   try {
-    next = reduce(room.doc, { type, payload });
+    next = reduce(room.doc, { type, payload: effPayload });
   } catch (e) {
     return { ok: false, reason: `reduce failed: ${/** @type {Error} */ (e).message}` };
   }
@@ -58,5 +69,5 @@ export function applyOp(db, room, { type, payload, baseVersion }) {
   commitRoom(db, room.id, next, newVersion); // durable BEFORE ack/broadcast
   room.doc = next;
   room.version = newVersion;
-  return { ok: true, version: newVersion };
+  return { ok: true, version: newVersion, op: { type, payload: effPayload } };
 }

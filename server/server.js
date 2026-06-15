@@ -152,9 +152,11 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
       try { msg = JSON.parse(data.toString()); } catch { return; }
       if (msg.type !== "op") return;
 
-      const result = applyOp(db, room, { type: msg.op?.type, payload: msg.op?.payload, baseVersion: msg.baseVersion });
+      const result = applyOp(db, room, { type: msg.op?.type, payload: msg.op?.payload });
       if (result.ok) {
-        broadcast(roomId, { type: "op", opId: msg.opId, op: msg.op, version: result.version });
+        // Broadcast the EFFECTIVE op (the merged full-field payload for EDIT_STORY),
+        // so every client reduces a complete payload (MP3 R4).
+        broadcast(roomId, { type: "op", opId: msg.opId, op: result.op, version: result.version });
       } else {
         ws.send(JSON.stringify({ type: "nack", opId: msg.opId, reason: result.reason }));
       }

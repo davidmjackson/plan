@@ -122,24 +122,26 @@ test("a rejected op nacks the SENDER only; other clients are untouched", async (
   A.ws.close(); B.ws.close();
 });
 
-test("case 5 over the wire: two concurrent EDIT_STORY — one wins, one is nacked stale", async () => {
+test("case 5 over the wire: concurrent EDIT_STORY to DIFFERENT fields both apply, no nack (MP3 merge)", async () => {
   const A = await connect("?room=acme-q3", { "x-spike-session": "acme-tok" });
   const B = await connect("?room=acme-q3", { "x-spike-session": "acme-tok" });
-  const v = A.state.version; // both edit against the same base version
+  const v = A.state.version;
 
-  send(A.ws, { type: "op", opId: "ea", op: { type: "EDIT_STORY", payload: { id: "S1", title: "fromA", summary: "", points: 3, epicId: null } }, baseVersion: v });
-  send(B.ws, { type: "op", opId: "eb", op: { type: "EDIT_STORY", payload: { id: "S1", title: "fromB", summary: "", points: 3, epicId: null } }, baseVersion: v });
+  // Field-delta ops (only the changed field) — the server merges each onto the latest story.
+  send(A.ws, { type: "op", opId: "ea", op: { type: "EDIT_STORY", payload: { id: "S1", title: "fromA" } }, baseVersion: v });
+  send(B.ws, { type: "op", opId: "eb", op: { type: "EDIT_STORY", payload: { id: "S1", points: 8 } }, baseVersion: v });
   await wait(150);
 
-  // Exactly one EDIT was accepted (broadcast to all); the other sender was nacked stale.
-  const accepted = [...opFrames(A.ws), ...opFrames(B.ws)].filter((f) => f.opId === "ea" || f.opId === "eb");
-  const acceptedIds = new Set(accepted.map((f) => f.opId));
-  assert.equal(acceptedIds.size, 1, "exactly one edit accepted");
+  // Both edits accepted (each broadcast to all), neither nacked — different fields merge.
+  const acceptedIds = new Set(
+    [...opFrames(A.ws), ...opFrames(B.ws)].filter((f) => f.opId === "ea" || f.opId === "eb").map((f) => f.opId),
+  );
+  assert.equal(acceptedIds.size, 2, "both edits accepted");
+  assert.equal(nackFrames(A.ws).length + nackFrames(B.ws).length, 0, "no nack — fields merge");
 
-  const loserId = acceptedIds.has("ea") ? "eb" : "ea";
-  const loserWs = loserId === "ea" ? A.ws : B.ws;
-  const nack = nackFrames(loserWs).find((f) => f.opId === loserId);
-  assert.ok(nack, "the losing edit is nacked");
-  assert.match(nack.reason, /stale/);
+  // The last broadcast carries the merged story: title fromA AND points 8.
+  const merged = [...opFrames(A.ws)].reverse().find((f) => f.op.type === "EDIT_STORY");
+  assert.equal(merged.op.payload.title, "fromA");
+  assert.equal(merged.op.payload.points, 8);
   A.ws.close(); B.ws.close();
 });

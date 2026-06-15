@@ -54,13 +54,23 @@ export function createRoomStore({ transport, name = "guest", onNack = () => {} }
   return {
     getState: () => state,
     dispatch(action) {
+      // EDIT_STORY is sent as a field-DELTA (MP3): only the fields that differ
+      // from this client's current view of the story, so concurrent edits to
+      // different fields merge server-side instead of clobbering. Every other
+      // action is sent whole.
+      let payload = action.payload;
+      const cur = action.type === "EDIT_STORY" ? state.stories?.[payload?.id] : null;
+      if (cur) {
+        const c = /** @type {any} */ (cur);
+        const p = /** @type {any} */ (payload);
+        const delta = /** @type {any} */ ({ id: p.id });
+        for (const f of ["title", "summary", "points", "epicId"]) {
+          if (p[f] !== c[f]) delta[f] = p[f];
+        }
+        payload = delta;
+      }
       // Pessimistic: emit the op, do NOT reduce locally (R1).
-      transport.send({
-        type: "op",
-        opId: newId("op"),
-        op: { type: action.type, payload: action.payload },
-        baseVersion: version,
-      });
+      transport.send({ type: "op", opId: newId("op"), op: { type: action.type, payload }, baseVersion: version });
     },
     subscribe(fn) {
       subscribers.add(fn);
