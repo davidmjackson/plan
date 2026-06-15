@@ -1,0 +1,22 @@
+# sprintplan multiplayer rooms service (MP6) — install at
+# /etc/systemd/system/sprintplan-rooms.service on the live box.
+# Mirrors the suite-hub unit pattern. Set User to match suite-hub's deploy user.
+[Unit]
+Description=sprintplan multiplayer rooms service (ws + better-sqlite3)
+After=network.target
+
+[Service]
+Type=simple
+User=davidj
+WorkingDirectory=/var/www/plan
+# Secrets + config live here (NOT committed) — see the runbook for the keys.
+EnvironmentFile=/var/www/plan/.env.rooms
+ExecStart=/usr/bin/node /var/www/plan/server/start.js
+Restart=always
+RestartSec=2
+# Hardening (optional, adjust to the box): the service only needs the repo +
+# its data dir writable.
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

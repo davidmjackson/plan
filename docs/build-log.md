@@ -20,6 +20,15 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-15 - Productionise slice MP6 — the live launch (deploy artifacts + hand-off)
+
+- **Task brief**: docs/phase2-mp6-deploy-brief.md - make the multiplayer service deployable and document the launch. The in-repo artifacts (entrypoint, systemd unit, apache reverse-proxy, a liveness route) are built here; the parts that go live (the HUB_API_KEY_PLAN secret, the suite/hub PR, the hub deploy, the live box) are the director's, captured in a single ordered runbook. No multiplayer behaviour change.
+- **AI contribution**: Chose the deploy topology — ONE ORIGIN: apache keeps serving the static client at sprintplan.uk and reverse-proxies the dynamic surface (ws upgrade, /rooms, /auth/*, /api/heartbeat, /auth-client/) to the node service on 127.0.0.1:3014, so the browser stays same-origin (no CORS, no client change). Built: a GET /health liveness route (unauthed, TDD); server/start.js, the production entrypoint (env-wired db/port/serveStatic + the real-vs-stub provider via env, clean SIGTERM/SIGINT shutdown); an npm "rooms" script; deploy/sprintplan-rooms.service (systemd unit mirroring suite-hub); deploy/apache-sprintplan-rooms.conf (the proxy snippet); and docs/phase2-mp6-deploy-runbook.md (the ordered launch — hub registration → secret → package resolution → data dir + backups → env file → systemd → apache → verify → rollback). Smoke-verified: start.js boots, serves /health, exits cleanly on SIGTERM. 184/184, typecheck + drift clean; MP1 path re-verified.
+- **Human contribution**: Directed the final slice. The execution (secret, suite/hub PR + deploy, the live box, the .env.rooms secrets) is the director's per the runbook — this slice deliberately touches no secrets and nothing live.
+- **Friction**: None of note. The one design choice was same-origin-via-apache-proxy vs a rooms.* subdomain + CORS; the proxy wins because it needs no client change and reuses the existing cert. @suite/auth-client stays a deploy-time dependency (resolvable on the box, not in package.json) — captured in the runbook, consistent with MP2.
+- **Verdict**: The whole Phase 2 multiplayer build is now code-complete: the spike proved the model, MP1–MP5 productionised it (client sync, real auth, field-delta conflicts, the collaborate bridge, presence), and MP6 makes it deployable without inventing a new front-end footprint — apache fronts a localhost node service, so plan keeps its static origin and simply gains a running service behind it. The remaining work is the director-executed live deploy via the runbook; everything buildable is on main.
+- **Time**: ~1 session.
+
 ### 2026-06-15 - Productionise slice MP5 — presence (who's in the room)
 
 - **Task brief**: docs/phase2-mp5-presence-brief.md - show everyone in a room who else is here, split out of MP4 as its own thin slice. The server already held a per-room socket set and each socket's identity; this slice broadcasts the participant list on join/leave and the client renders a presence strip.
