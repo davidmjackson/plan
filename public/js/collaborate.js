@@ -63,16 +63,25 @@ function openCreateDialog(getPlan, flash) {
     create.disabled = true;
     let res;
     try {
+      // redirect:"manual" so the real auth-client's 302→hub-login (the unauthed
+      // case) surfaces as an opaqueredirect we can detect, rather than fetch
+      // following it cross-origin and throwing.
       res = await fetch("/rooms", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode, plan: getPlan() }),
+        redirect: "manual",
       });
     } catch {
       create.disabled = false;
       return flash("Couldn't reach the collaboration service.");
     }
-    if (res.status === 401) { modal.close(); return flash("Sign in via Sprint Suite to start a shared room."); }
+    // Not signed in: the stub returns 401; the real requireAuth 302-redirects
+    // (status 0 / opaqueredirect under redirect:"manual"). Both → sign-in prompt.
+    if (res.status === 401 || res.status === 0 || res.type === "opaqueredirect") {
+      modal.close();
+      return flash("Sign in via Sprint Suite to start a shared room.");
+    }
     if (!res.ok) { create.disabled = false; return flash("Couldn't create the room."); }
     showShareLink(content, footer, await res.json());
   });
