@@ -20,6 +20,15 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
+### 2026-06-15 - Productionise slice MP5 — presence (who's in the room)
+
+- **Task brief**: docs/phase2-mp5-presence-brief.md - show everyone in a room who else is here, split out of MP4 as its own thin slice. The server already held a per-room socket set and each socket's identity; this slice broadcasts the participant list on join/leave and the client renders a presence strip.
+- **AI contribution**: Server — mint a stable participantId per ws upgrade; a `broadcastPresence(roomId)` derives `{id,name,identity}` from the socket set and is sent on every join (after the state frame) and leave. Client — `sync-client` routes a `presence` frame to a new `onPresence(participants)` callback that does NOT touch plan state/version (side-channel, R2); main.js renders a `#presence` topbar strip (initial chips, a "(guest)" marker for claimed/open-link joiners so a self-asserted name is never read as a member), room-mode only. TDD: sync-client onPresence unit (plan state untouched), and a two-real-client integration test (join lists both, leave drops to one, open-link guest = "claimed"). 183/183, typecheck + drift clean. Browser run (two contexts): both names appear, guest marked, drops on leave, strip hidden in local mode, zero console errors.
+- **Human contribution**: Directed the slice (presence as its own follow-on, per the MP4 thin-first ruling); no new forks needed (mechanical).
+- **Friction**: Minimal. The only care point was R2 — keeping presence strictly off the plan document so it never reaches validatePlan/persistence/the op loop; routed via its own callback like onNack, never through reduce. A failing pre-implementation test left sockets open and hung (the `until` timed out before the explicit close), which resolved once green.
+- **Verdict**: Presence fell out almost for free because the socket set and the verified/claimed identity already existed from the spike/MP2 — the slice is a broadcast on two lifecycle events plus a strip. Keeping it a side-channel (not plan state) was the one discipline that mattered. Next and last on the roadmap: slice 6 — systemd deploy + the MP2 hub registration + the cross-origin static→service wiring (the live launch).
+- **Time**: ~1 session.
+
 ### 2026-06-15 - Productionise slice MP4 — the collaborate bridge (create a room from the current plan + share link)
 
 - **Task brief**: docs/phase2-mp4-collab-bridge-brief.md - give a UI path from a plan to a live shared room: pick a blend mode, create the room seeded with the CURRENT plan, get a share link. Scope ruled this session: collaboration REQUIRES an account (creation UI built/tested against the stub now, goes live with the hub at slice 5); THIN FIRST — the bridge only, presence is a separate follow-on.

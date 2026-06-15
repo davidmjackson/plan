@@ -132,6 +132,15 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     const json = JSON.stringify(msg);
     for (const ws of sockets.get(id) ?? []) ws.send(json);
   };
+  // Presence (MP5): the room's current participants, server-derived from the
+  // socket set, broadcast on join/leave. Per-connection; never plan state.
+  const broadcastPresence = (id) => {
+    const participants = [...(sockets.get(id) ?? [])].map((ws) => {
+      const m = /** @type {any} */ (ws).meta;
+      return { id: m.id, name: m.name, identity: m.identity };
+    });
+    broadcast(id, { type: "presence", participants });
+  };
 
   httpServer.on("upgrade", async (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -149,7 +158,7 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     }
 
     wss.handleUpgrade(req, socket, head, (ws) => {
-      /** @type {any} */ (ws).meta = { roomId, identity: decision.identity, name, session };
+      /** @type {any} */ (ws).meta = { roomId, identity: decision.identity, name, session, id: newId("p") };
       join(roomId, ws);
       wss.emit("connection", ws, req);
     });
@@ -160,6 +169,7 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     const room = getRoom(roomId);
     // First frame: the authoritative state + this participant's identity tag.
     ws.send(JSON.stringify({ type: "state", doc: room.doc, version: room.version, identity }));
+    broadcastPresence(roomId); // tell the room (incl. the new joiner) who's here
 
     ws.on("message", (data) => {
       let msg;
@@ -176,7 +186,7 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
       }
     });
 
-    ws.on("close", () => leave(roomId, ws));
+    ws.on("close", () => { leave(roomId, ws); broadcastPresence(roomId); });
   });
 
   return new Promise((resolve) => {

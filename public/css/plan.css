@@ -1046,3 +1046,39 @@
   gap: 8px;
   cursor: pointer;
 }
+
+/* MP5 — live presence strip (room mode). Initial chips with a guest marker. */
+.presence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.presence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 8px 2px 2px;
+  border-radius: 999px;
+  background: var(--plumwash, oklch(0.95 0.03 290));
+  color: var(--ink, #222);
+}
+.presence-chip.is-guest {
+  background: var(--surface-2, #eee);
+  color: var(--ink-soft, #555);
+}
+.presence-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--plum, oklch(0.55 0.13 290));
+  color: #fff;
+  font-weight: 600;
+}
+.presence-chip.is-guest .presence-initial {
+  background: #999;
+}

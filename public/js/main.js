@@ -139,8 +139,31 @@ const store = IN_ROOM
       transport: wsTransport(location.origin.replace(/^http/, "ws") + "/?" + roomParams.toString()),
       name: roomParams.get("name") ?? "guest",
       onNack: (reason) => flash(roomNackMessage(reason)),
+      onPresence: (list) => renderPresence(list),
     })
   : createStore(freshPlan());
+
+/** Render the live presence strip (MP5, room mode). A claimed (open-link) guest
+ * is marked distinctly so a self-asserted name is never read as a member. */
+function renderPresence(/** @type {Array<{ id: string, name: string, identity: string }>} */ participants) {
+  const host = document.getElementById("presence");
+  if (!host) return;
+  host.replaceChildren();
+  for (const p of participants) {
+    const guest = p.identity === "claimed";
+    const chip = document.createElement("span");
+    chip.className = "presence-chip" + (guest ? " is-guest" : "");
+    const initial = document.createElement("span");
+    initial.className = "presence-initial";
+    initial.textContent = (p.name || "?").trim().charAt(0).toUpperCase() || "?";
+    const name = document.createElement("span");
+    name.className = "presence-name";
+    name.textContent = guest ? `${p.name} (guest)` : p.name;
+    chip.append(initial, name);
+    host.append(chip);
+  }
+  host.hidden = participants.length === 0;
+}
 
 // Autosave: every action persists immediately (cross-cutting rule: refresh
 // loses nothing). Persist the { savedAt, plan } envelope (R7) — savedAt is

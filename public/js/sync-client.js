@@ -25,10 +25,10 @@ import { reduce, createInitialState } from "./store.js";
 import { newId } from "./ids.js";
 
 /**
- * @param {{ transport: Transport, name?: string, onNack?: (reason: string) => void }} opts
+ * @param {{ transport: Transport, name?: string, onNack?: (reason: string) => void, onPresence?: (participants: any[]) => void }} opts
  * @returns {{ getState: () => any, dispatch: (action: { type: string, payload?: any }) => void, subscribe: (fn: (s: any) => void) => () => void, close: () => void }}
  */
-export function createRoomStore({ transport, name = "guest", onNack = () => {} }) {
+export function createRoomStore({ transport, name = "guest", onNack = () => {}, onPresence = () => {} }) {
   // Placeholder until the server's authoritative 'state' frame arrives.
   let state = createInitialState("2026-01-01");
   let version = 0;
@@ -48,6 +48,9 @@ export function createRoomStore({ transport, name = "guest", onNack = () => {} }
       notify();
     } else if (msg.type === "nack") {
       onNack(msg.reason);
+    } else if (msg.type === "presence") {
+      // Side-channel: presence never touches plan state/version (MP5 R2).
+      onPresence(msg.participants);
     }
   });
 
