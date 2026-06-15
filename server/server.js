@@ -24,6 +24,7 @@ import { loadRoom, createRoom } from "./db.js";
 import { applyOp } from "./rooms.js";
 import { createAuthProvider } from "./auth.js";
 import { createInitialState } from "../public/js/store.js";
+import { validatePlan } from "../public/js/plan-io.js";
 import { newId } from "../public/js/ids.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -86,9 +87,22 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     const companyId = provider.companyOf(req);
     if (!companyId) return res.status(403).json({ error: "no company on session" });
     const mode = req.body?.mode === "open-link" ? "open-link" : "company-only";
+
+    // Optional "import my plan into the room" (MP4 R1): validate with the existing
+    // guard, seed the room doc with it, normalise the transient field. No plan =
+    // an empty starting board.
+    let doc;
+    if (req.body?.plan != null) {
+      const v = validatePlan(req.body.plan);
+      if (!v.ok) return res.status(400).json({ error: v.reason });
+      doc = { ...req.body.plan, lastReturnedStoryIds: [] };
+    } else {
+      doc = createInitialState("2026-01-05");
+    }
+
     const id = `${companyId}-${newId("room")}`;
     const shareToken = newId("share");
-    createRoom(db, { id, companyId, shareToken, mode, doc: createInitialState("2026-01-05") });
+    createRoom(db, { id, companyId, shareToken, mode, doc });
     res.json({ id, companyId, shareToken, mode });
   });
 
