@@ -20,7 +20,7 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
-### 2026-06-15 - Productionise slice MP6 — the live launch (deploy artifacts + hand-off) [DRAFT, awaiting sign-off]
+### 2026-06-15 - Productionise slice MP6 — the live launch (deploy artifacts + hand-off)
 
 - **Task brief**: docs/phase2-mp6-deploy-brief.md - make the multiplayer service deployable and document the launch. The in-repo artifacts (entrypoint, systemd unit, apache reverse-proxy, a liveness route) are built here; the parts that go live (the HUB_API_KEY_PLAN secret, the suite/hub PR, the hub deploy, the live box) are the director's, captured in a single ordered runbook. No multiplayer behaviour change.
 - **AI contribution**: Chose the deploy topology — ONE ORIGIN: apache keeps serving the static client at sprintplan.uk and reverse-proxies the dynamic surface (ws upgrade, /rooms, /auth/*, /api/heartbeat, /auth-client/) to the node service on 127.0.0.1:3014, so the browser stays same-origin (no CORS, no client change). Built: a GET /health liveness route (unauthed, TDD); server/start.js, the production entrypoint (env-wired db/port/serveStatic + the real-vs-stub provider via env, clean SIGTERM/SIGINT shutdown); an npm "rooms" script; deploy/sprintplan-rooms.service (systemd unit mirroring suite-hub); deploy/apache-sprintplan-rooms.conf (the proxy snippet); and docs/phase2-mp6-deploy-runbook.md (the ordered launch — hub registration → secret → package resolution → data dir + backups → env file → systemd → apache → verify → rollback). Smoke-verified: start.js boots, serves /health, exits cleanly on SIGTERM. 184/184, typecheck + drift clean; MP1 path re-verified.
