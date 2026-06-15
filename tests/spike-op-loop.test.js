@@ -19,8 +19,8 @@ import { rmSync } from "node:fs";
 
 import { reduce, createInitialState } from "../public/js/store.js";
 import { validatePlan } from "../public/js/plan-io.js";
-import { openDb, createRoom, loadRoom } from "../spike/db.js";
-import { applyOp } from "../spike/rooms.js";
+import { openDb, createRoom, loadRoom } from "../server/db.js";
+import { applyOp } from "../server/rooms.js";
 
 let dbCounter = 0;
 /** Fresh on-disk db per test (case 4 needs reopen), auto-cleaned. */

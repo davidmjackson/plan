@@ -15,11 +15,17 @@
  */
 
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
+import { dirname, join as pathJoin } from "node:path";
+import express from "express";
 import { WebSocketServer } from "ws";
 
-import { loadRoom } from "./db.js";
+import { loadRoom, createRoom } from "./db.js";
 import { applyOp } from "./rooms.js";
 import { verifySession } from "./auth-seam.js";
+import { createInitialState } from "../public/js/store.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Decide a ws upgrade against the room's blend policy (poker's decideUpgrade shape).
@@ -43,13 +49,29 @@ export function decideUpgrade(room, session, token) {
 }
 
 /**
- * Start the spike server. Holds its own room cache + room→sockets index, so each
+ * Start the server. Holds its own room cache + room→sockets index, so each
  * instance (e.g. per test) is isolated.
- * @param {{ db: import("better-sqlite3").Database, port?: number }} opts
- * @returns {Promise<{ url: string, close: () => void }>}
+ *
+ * Slice MP1 additions over the spike: `serveStatic` mounts plan's public/ so a
+ * browser can load the app AND open the ws from one origin in dev; `seedRoom`
+ * creates an open-link dev room if absent (room-creation UI is a later slice).
+ * @param {{
+ *   db: import("better-sqlite3").Database,
+ *   port?: number,
+ *   serveStatic?: boolean,
+ *   seedRoom?: { id: string, companyId: string, shareToken: string, mode: string } | null,
+ * }} opts
+ * @returns {Promise<{ url: string, httpUrl: string, close: () => void }>}
  */
-export function startSpikeServer({ db, port = 0 }) {
-  const httpServer = createServer((_req, res) => { res.writeHead(426); res.end("Upgrade Required"); });
+export function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom = null }) {
+  if (seedRoom && !loadRoom(db, seedRoom.id)) {
+    createRoom(db, { ...seedRoom, doc: createInitialState("2026-01-05") });
+  }
+
+  const requestHandler = serveStatic
+    ? express().use(express.static(pathJoin(__dirname, "..", "public")))
+    : (/** @type {any} */ _req, /** @type {any} */ res) => { res.writeHead(426); res.end("Upgrade Required"); };
+  const httpServer = createServer(requestHandler);
   const wss = new WebSocketServer({ noServer: true });
 
   /** @type {Map<string, any>} authoritative in-memory rooms */
@@ -123,6 +145,7 @@ export function startSpikeServer({ db, port = 0 }) {
       const addr = /** @type {import("node:net").AddressInfo} */ (httpServer.address());
       resolve({
         url: `ws://127.0.0.1:${addr.port}`,
+        httpUrl: `http://127.0.0.1:${addr.port}`,
         close: () => { wss.close(); httpServer.close(); },
       });
     });

@@ -6,6 +6,7 @@
  */
 
 import { createStore, createInitialState } from "./store.js";
+import { createRoomStore, wsTransport } from "./sync-client.js";
 import {
   setStartDate,
   setDurationMonths,
@@ -109,24 +110,51 @@ function classifySave() {
   return { kind: "valid", plan: normalise(val.plan), savedAt };
 }
 
-// The store ALWAYS boots fresh (R2): a saved board is restored only by an
+// --- Dual-mode fork (MP1, R3) ----------------------------------------------
+// A `?room=` param takes the multiplayer path: a server-authoritative room store
+// over a ws to the room service, NO autosave and NO resume prompt (the server is
+// the source of truth; touching sprintplan:board would clobber the user's local
+// plan). Absent the param, the local single-user app below runs exactly as it
+// always has. The room store mirrors createStore's interface (R2), so every view
+// module is reused unchanged.
+const roomParams = new URLSearchParams(location.search);
+const ROOM_ID = roomParams.get("room");
+const IN_ROOM = ROOM_ID != null && ROOM_ID !== "";
+
+/** Translate a server nack reason into a user-facing toast line. */
+function roomNackMessage(/** @type {string} */ reason) {
+  if (reason.includes("not allowed")) return "That action isn't available in a shared room.";
+  if (reason.includes("stale")) return "Someone else edited that first — showing the latest.";
+  return `Change not applied: ${reason}`;
+}
+
+// The local store ALWAYS boots fresh (R2): a saved board is restored only by an
 // explicit, prompted loadPlan dispatch, never substituted at boot. Two safety
 // properties fall out — the saved board never renders under the prompt (no
 // last-quarter flash on a shared screen), and autosave (dispatch-only) cannot
 // overwrite the saved bytes until the user chooses (the R5 rescue stays open).
-const store = createStore(freshPlan());
+const store = IN_ROOM
+  ? createRoomStore({
+      transport: wsTransport(location.origin.replace(/^http/, "ws") + "/?" + roomParams.toString()),
+      name: roomParams.get("name") ?? "guest",
+      onNack: (reason) => flash(roomNackMessage(reason)),
+    })
+  : createStore(freshPlan());
 
 // Autosave: every action persists immediately (cross-cutting rule: refresh
 // loses nothing). Persist the { savedAt, plan } envelope (R7) — savedAt is
 // stamped HERE, at the serialize boundary, never in store state. Brief 6's
 // resume card reads savedAt for free; this brief writes it but renders nothing.
-store.subscribe((state) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ savedAt: nowISO(), plan: state }));
-  } catch {
-    // Storage full/blocked — non-fatal for the in-memory session.
-  }
-});
+// LOCAL MODE ONLY (R3): in a room the server owns persistence.
+if (!IN_ROOM) {
+  store.subscribe((state) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ savedAt: nowISO(), plan: state }));
+    } catch {
+      // Storage full/blocked — non-fatal for the in-memory session.
+    }
+  });
+}
 
 // Render on every change, then (re)wire dragula over the fresh DOM. render()
 // rebuilds the board/backlog via replaceChildren, so the drake must be rebuilt
@@ -365,7 +393,9 @@ fileInput?.addEventListener("change", async () => {
 // saved bytes and, only if a save exists, open the prompt OVER that fresh board.
 // Nothing has dispatched yet, so the saved bytes are still intact for rescue.
 
-const verdict = classifySave();
+// Room mode skips the local restore gate entirely (R3): there is nothing local
+// to resume, and the authoritative state arrives over the socket.
+const verdict = IN_ROOM ? /** @type {SaveVerdict} */ ({ kind: "none" }) : classifySave();
 
 if (verdict.kind === "valid") {
   activePrompt = openResumePrompt(

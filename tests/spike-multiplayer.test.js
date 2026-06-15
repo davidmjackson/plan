@@ -14,9 +14,9 @@ import assert from "node:assert/strict";
 import { WebSocket } from "ws";
 
 import { reduce, createInitialState } from "../public/js/store.js";
-import { openDb, createRoom } from "../spike/db.js";
-import { startSpikeServer } from "../spike/server.js";
-import { registerTestSession } from "../spike/auth-seam.js";
+import { openDb, createRoom } from "../server/db.js";
+import { startSpikeServer } from "../server/server.js";
+import { registerTestSession } from "../server/auth-seam.js";
 
 let db, server, base;
 
