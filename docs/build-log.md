@@ -20,7 +20,7 @@ Entries are newest first. Be honest: friction and failure are the valuable mater
 
 ## Entries
 
-### 2026-06-15 - Phase 2 multiplayer SPIKE built — GO/NO-GO proof (PASS) [DRAFT, awaiting sign-off]
+### 2026-06-15 - Phase 2 multiplayer SPIKE built — GO/NO-GO proof (PASS)
 
 - **Task brief**: docs/phase2-multiplayer-spike-build-brief.md - the BUILD half of P2.1, written against the approved PROPOSE. Stand up the thinnest authoritative-room + serialized-op service (ws + better-sqlite3, company-scoped, auth-gated upgrade) and prove the zero-data-loss guarantee crosses the network on plan's ordered/interdependent/versioned document. Deliver a GO/NO-GO verdict against seven asserted cases, plus a written finding. Spike code is throwaway-tolerant; the finding is the durable artefact.
 - **AI contribution**: Built the spike as five net-new files under `spike/` + `tests/`, reusing plan's shipped `reduce` and `validatePlan` BY IMPORT only (zero edits to the shipped client, per the isolation ruling). TDD throughout — two red-green cycles: the op-loop conflict proof (cases 1–6 + a vocabulary guard) driven directly against a real SQLite store, then the ws integration (case 7 auth/company boundary + transport/broadcast + the wire-level EDIT_STORY clobber from two real clients). All seven cases PASS; 16 spike tests green; full suite 163/163, drift + typecheck clean. Wrote docs/phase2-multiplayer-spike-finding.md (verdict, the one net-new rule, the honest tradeoffs, the productionise recommendation) and this entry.
