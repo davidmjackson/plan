@@ -3,7 +3,7 @@
  * Phase 2 spike — the authoritative op loop (PROPOSE §7, the load-bearing seam).
  *
  * The whole conflict model lives in applyOp:
- *   1. allow-list the op TYPE (9 wire ops; excluded types never reach reduce),
+ *   1. allow-list the op TYPE (11 wire ops; excluded types never reach reduce),
  *   2. version-gate EDIT_STORY (reject if written against a stale version),
  *   3. apply via plan's EXISTING pure reducer (imported, never re-implemented),
  *   4. guard with plan's EXISTING validatePlan,
@@ -18,7 +18,7 @@ import { validatePlan } from "../public/js/plan-io.js";
 import { commitRoom } from "./db.js";
 
 /**
- * The 9 wire ops. All serialise safely under arrival order + validatePlan; EDIT_STORY
+ * The 11 wire ops. All serialise safely under arrival order + validatePlan; EDIT_STORY
  * is a field-delta merged against the latest story (MP3), so it needs no version gate.
  */
 const ALLOWED = new Set([
@@ -27,6 +27,10 @@ const ALLOWED = new Set([
   "LINK_DEP", "UNLINK_DEP",
   // phase2-build4 #10: the room name IS the plan title, edited live in a room.
   "SET_PLAN_TITLE",
+  // phase2-build6: mark a story a stretch goal — a whole-payload data op that
+  // records intent without touching capacity (the honesty invariant lives in the
+  // selectors, not here).
+  "SET_STORY_STRETCH",
 ]);
 
 /** @typedef {{ ok: true, version: number, op: { type: string, payload: any } } | { ok: false, reason: string }} OpResult */

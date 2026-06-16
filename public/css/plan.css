@@ -1185,6 +1185,43 @@
   background: var(--plumwash);
 }
 
+/* --- build6 stretch chip + toggle: placed cards only, NEUTRAL tones --------
+   Stretch records intent, NOT a capacity discount, so it uses the muted
+   soft/bone vocabulary only — never amber/red (capacity / dependency violation)
+   and never plum-as-status (plum is the interaction accent + the D-badge). The
+   toggle is always present on a placed card; the chip reads only when on. */
+.bl-story-stretch-chip {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bone);
+  color: var(--soft);
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.bl-story-stretch-toggle {
+  margin-left: 4px;
+  padding: 0 5px;
+  border: none;
+  background: none;
+  color: var(--line2);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 100ms ease, background 100ms ease;
+}
+.bl-story-stretch-toggle:hover,
+.bl-story-stretch-toggle:focus-visible {
+  color: var(--soft);
+  background: var(--bone);
+}
+.bl-story-stretch-toggle.is-on {
+  color: var(--ink, #222);
+}
+
 /* --- #7 confirm dialog message (reuses the .modal shell) ------------------ */
 .modal-message {
   margin: 0;

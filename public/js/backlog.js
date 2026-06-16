@@ -26,7 +26,7 @@ export const NO_EPIC = "__none__";
  * the group header carries the colour) and the sprint board (pass `epic` to
  * prepend the colour dot, since placed cards stand alone). Carries the data
  * attributes the delegated click and the dragula accepts()/drop wiring read.
- * @param {{ id: string, title: string, summary: string, points: number, epicId: string | null }} story
+ * @param {{ id: string, title: string, summary: string, points: number, epicId: string | null, stretch?: boolean }} story
  * @param {{ id: string, title: string, colourKey: string } | null} [epic]
  * @param {Array<{ label: string, violation: boolean }>} [badges]  shared D badges (Brief 7)
  */
@@ -57,6 +57,22 @@ export function storyCard(story, epic, badges = [], placed = false) {
   // own data-act so the board listener routes it to MOVE_STORY, not edit-story;
   // drag.js excludes it as a drag handle so grabbing it never starts a drag.
   if (placed) {
+    // phase2-build6: stretch is a PLACED-only concept. A muted chip reads only
+    // when the flag is on; the toggle is always available on a placed card and
+    // routes to SET_STORY_STRETCH via the board listener (a stretch story moved
+    // back to the backlog keeps the flag in data but renders neither here). Like
+    // the return control, drag.js excludes the toggle so tapping it never drags.
+    if (story.stretch) row.append(el("span", "bl-story-stretch-chip mono", "stretch"));
+    const toggleLabel = story.stretch ? "Unmark stretch goal" : "Mark as stretch goal";
+    const toggle = el("button", "bl-story-stretch-toggle" + (story.stretch ? " is-on" : ""), "✦");
+    toggle.setAttribute("type", "button");
+    toggle.dataset.act = "toggle-stretch";
+    toggle.dataset.story = story.id;
+    toggle.setAttribute("aria-label", toggleLabel);
+    toggle.setAttribute("aria-pressed", story.stretch ? "true" : "false");
+    toggle.title = toggleLabel;
+    row.append(toggle);
+
     const ret = el("button", "bl-story-return", "↩");
     ret.setAttribute("type", "button");
     ret.dataset.act = "return-to-backlog";

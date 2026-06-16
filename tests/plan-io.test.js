@@ -125,41 +125,92 @@ test("migratePlan: a missing schemaVersion fails", () => {
   assert.match(result.reason, /version/);
 });
 
-// Case 4: the newer-version guard still holds after the v2 bump.
-test("migratePlan: a schemaVersion newer than this build (v3) fails clearly", () => {
+// Case 4: the newer-version guard still holds after the v3 bump.
+test("migratePlan: a schemaVersion newer than this build (v4) fails clearly", () => {
   const plan = placedPlan();
-  plan.meta.schemaVersion = 3;
+  plan.meta.schemaVersion = 4;
   const result = migratePlan(plan);
   assert.equal(result.ok, false);
   assert.match(result.reason, /newer/);
 });
 
-// Cases 1 + 2: the v1->v2 migrator adds the empty deps field, bumps the version,
-// and touches nothing else (the seam's first real use).
-test("migratePlan: a v1 plan gains deps [] and schemaVersion 2, other keys untouched", () => {
+// Cases 1 + 2: a v1 plan walks the full chain (v1->v2 adds deps [], v2->v3 bumps
+// the version), ending at the current schema with other keys untouched.
+test("migratePlan: a v1 plan gains deps [] and migrates to schemaVersion 3, other keys untouched", () => {
   const plan = v1Plan();
   const result = migratePlan(plan);
   assert.equal(result.ok, true);
   assert.deepEqual(result.plan.deps, []);
-  assert.equal(result.plan.meta.schemaVersion, 2);
+  assert.equal(result.plan.meta.schemaVersion, 3);
   assert.deepEqual(result.plan.stories, plan.stories); // representative key untouched
   assert.deepEqual(result.plan.backlog, plan.backlog);
 });
 
-// Case 3: a v2 plan migrates as a no-op.
-test("migratePlan: a v2 plan passes through unchanged", () => {
-  const plan = placedPlan(); // already v2 (createInitialState seeds it)
+// phase2-build6: the v2->v3 migrator is a version-bump only (stretch is optional,
+// absent = false, so no per-story backfill). deps and stories are preserved.
+test("migratePlan: a v2 plan migrates to v3, deps and stories preserved, no stretch backfill", () => {
+  const plan = placedPlan(); // v2 (createInitialState seeds it)
+  const result = migratePlan(plan);
+  assert.equal(result.ok, true);
+  assert.equal(result.plan.meta.schemaVersion, 3);
+  assert.deepEqual(result.plan.deps, plan.deps);
+  assert.deepEqual(result.plan.stories, plan.stories); // untouched: no stretch field stamped
+});
+
+// A v3 plan migrates as a no-op.
+test("migratePlan: a v3 plan passes through unchanged", () => {
+  const plan = placedPlan();
+  plan.meta.schemaVersion = 3;
   const result = migratePlan(plan);
   assert.equal(result.ok, true);
   assert.equal(result.plan, plan);
 });
 
-// --- Case 5: a fresh plan is v2 with an empty deps array -------------------
+// phase2-build6: a v2 plan with NO stretch fields loads clean; absent reads false.
+test("migratePlan: a v2 plan's stories carry no stretch field (absent = false at read sites)", () => {
+  const result = migratePlan(placedPlan());
+  assert.equal(result.ok, true);
+  for (const id of Object.keys(result.plan.stories)) {
+    assert.equal(result.plan.stories[id].stretch, undefined);
+    assert.equal(result.plan.stories[id].stretch ?? false, false);
+  }
+});
 
-test("createInitialState: a fresh plan is schemaVersion 2 with deps []", () => {
+// phase2-build6 data-continuity (the hardest bar): a stored v2 { savedAt, plan }
+// envelope extracts, migrates to v3, and validates with zero data loss.
+test("an existing v2 { savedAt, plan } save resumes as v3 with no data loss", () => {
+  const v2 = placedPlan(); // schemaVersion 2
+  const stored = { savedAt: "2026-06-01T00:00:00.000Z", plan: v2 };
+  const ext = extractPlan(stored, "restore");
+  assert.equal(ext.ok, true);
+  const mig = migratePlan(ext.plan);
+  assert.equal(mig.ok, true);
+  assert.equal(mig.plan.meta.schemaVersion, 3);
+  const val = validatePlan(mig.plan);
+  assert.equal(val.ok, true);
+  assert.deepEqual(val.plan.stories, v2.stories); // every story survived
+  assert.deepEqual(val.plan.deps, v2.deps);
+});
+
+// --- Case 5: a fresh plan is v3 with an empty deps array -------------------
+
+test("createInitialState: a fresh plan is schemaVersion 3 with deps []", () => {
   const s = createInitialState("2026-07-06");
-  assert.equal(s.meta.schemaVersion, 2);
+  assert.equal(s.meta.schemaVersion, 3);
   assert.deepEqual(s.deps, []);
+});
+
+// phase2-build6: validatePlan gains no stretch gate (non-structural scalar, R2).
+test("validatePlan: stretch booleans on stories validate; no stretch validates", () => {
+  const withStretch = placedPlan();
+  withStretch.meta.schemaVersion = 3;
+  withStretch.stories.a = { ...withStretch.stories.a, stretch: true };
+  withStretch.stories.b = { ...withStretch.stories.b, stretch: false };
+  assert.equal(validatePlan(withStretch).ok, true);
+
+  const noStretch = placedPlan();
+  noStretch.meta.schemaVersion = 3;
+  assert.equal(validatePlan(noStretch).ok, true);
 });
 
 // --- Cases 6-10: validatePlan learns the deps field ------------------------

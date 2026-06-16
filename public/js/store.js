@@ -15,7 +15,7 @@ import { PALETTE } from "./epic-palette.js";
  * @typedef {import("./regenerate.js").PlacedSprint} PlacedSprint
  *
  * @typedef {{ id: string, title: string, colourKey: string }} Epic
- * @typedef {{ id: string, title: string, summary: string, points: number, epicId: string | null }} Story
+ * @typedef {{ id: string, title: string, summary: string, points: number, epicId: string | null, stretch?: boolean }} Story
  *
  * @typedef {{ id: string, blockerId: string, blockedId: string }} Dep
  * @typedef {Object} PlanState
@@ -44,7 +44,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 export function createInitialState(startDate) {
   const settings = { startDate, ...DEFAULT_SETTINGS };
   return {
-    meta: { title: null, schemaVersion: 2 },
+    meta: { title: null, schemaVersion: 3 },
     settings,
     sprints: generateSprints(settings).map((s) => ({ ...s, placedStoryIds: [] })),
     backlog: [],
@@ -258,6 +258,21 @@ export function reduce(state, action) {
         deps: state.deps.filter((d) => d.id !== action.payload.id),
         lastReturnedStoryIds: [],
       };
+
+    // --- phase2-build6: mark a story stretch ------------------------------
+    // Writes the flag onto the story and preserves every other field. An
+    // explicit boolean (LWW-clean in a room). An unknown id is a safe no-op:
+    // returning state avoids spreading `undefined` into a phantom story that
+    // validatePlan would later reject.
+    case ActionTypes.SET_STORY_STRETCH: {
+      const { id, stretch } = action.payload;
+      if (!(id in state.stories)) return state;
+      return {
+        ...state,
+        stories: { ...state.stories, [id]: { ...state.stories[id], stretch } },
+        lastReturnedStoryIds: [],
+      };
+    }
 
     default:
       throw new Error(`unknown action: ${action.type}`);
