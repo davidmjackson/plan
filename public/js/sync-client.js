@@ -25,10 +25,10 @@ import { reduce, createInitialState } from "./store.js";
 import { newId } from "./ids.js";
 
 /**
- * @param {{ transport: Transport, name?: string, onNack?: (reason: string) => void, onPresence?: (participants: any[]) => void }} opts
- * @returns {{ getState: () => any, dispatch: (action: { type: string, payload?: any }) => void, subscribe: (fn: (s: any) => void) => () => void, close: () => void }}
+ * @param {{ transport: Transport, name?: string, onNack?: (reason: string) => void, onPresence?: (participants: any[]) => void, onCursor?: (msg: { id: string, x?: number, y?: number, gone?: boolean }) => void }} opts
+ * @returns {{ getState: () => any, dispatch: (action: { type: string, payload?: any }) => void, sendCursor: (x: number, y: number) => void, clearCursor: () => void, subscribe: (fn: (s: any) => void) => () => void, close: () => void }}
  */
-export function createRoomStore({ transport, name = "guest", onNack = () => {}, onPresence = () => {} }) {
+export function createRoomStore({ transport, name = "guest", onNack = () => {}, onPresence = () => {}, onCursor = () => {} }) {
   // Placeholder until the server's authoritative 'state' frame arrives.
   let state = createInitialState("2026-01-01");
   let version = 0;
@@ -51,6 +51,11 @@ export function createRoomStore({ transport, name = "guest", onNack = () => {}, 
     } else if (msg.type === "presence") {
       // Side-channel: presence never touches plan state/version (MP5 R2).
       onPresence(msg.participants);
+    } else if (msg.type === "cursor") {
+      // Ephemeral side-channel (phase2-build5, R1): a remote pointer position or
+      // its removal. NEVER reduces, NEVER touches state/version — straight to the
+      // view's cursor handler. The server has already excluded our own cursor.
+      onCursor(msg);
     }
   });
 
@@ -74,6 +79,20 @@ export function createRoomStore({ transport, name = "guest", onNack = () => {}, 
       }
       // Pessimistic: emit the op, do NOT reduce locally (R1).
       transport.send({ type: "op", opId: newId("op"), op: { type: action.type, payload }, baseVersion: version });
+    },
+    /**
+     * Send THIS client's pointer position as normalised board fractions (phase2-
+     * build5). Pure ephemeral side-channel, parallel to dispatch: it goes over the
+     * transport and NEVER through the op loop — the server relays it without
+     * touching room state. Fire-and-forget.
+     * @param {number} x @param {number} y
+     */
+    sendCursor(x, y) {
+      transport.send({ type: "cursor", x, y });
+    },
+    /** Tell the room this client's cursor has left the board (phase2-build5). */
+    clearCursor() {
+      transport.send({ type: "cursor", gone: true });
     },
     subscribe(fn) {
       subscribers.add(fn);

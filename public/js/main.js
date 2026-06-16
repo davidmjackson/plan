@@ -10,6 +10,7 @@ import { createRoomStore, wsTransport } from "./sync-client.js";
 import { wireCollaborate, openInviteModal } from "./collaborate.js";
 import { resolveJoinName } from "./room-join.js";
 import { promptForName } from "./room-gate.js";
+import { toBoardFraction, fromBoardFraction, reconcileCursors } from "./cursors.js";
 import {
   setStartDate,
   setDurationMonths,
@@ -159,22 +160,40 @@ const store = IN_ROOM
       name: roomParams.get("name") ?? "guest",
       onNack: (reason) => flash(roomNackMessage(reason)),
       onPresence: (list) => renderPresence(list),
+      onCursor: (msg) => handleCursor(/** @type {HTMLElement} */ (document.getElementById("board")), msg),
     })
   : createStore(freshPlan());
 
+/**
+ * The latest presence snapshot keyed by participant id: the colour + name a remote
+ * cursor reads (phase2-build5). Kept in step by renderPresence so cursor frames
+ * stay tiny (id + position only) and carry no colour of their own.
+ * @type {Map<string, { name: string, colour: string }>}
+ */
+const presenceById = new Map();
+
 /** Render the live presence strip (MP5, room mode). A claimed (open-link) guest
- * is marked distinctly so a self-asserted name is never read as a member. */
-function renderPresence(/** @type {Array<{ id: string, name: string, identity: string }>} */ participants) {
+ * is marked distinctly so a self-asserted name is never read as a member. The
+ * initial badge is tinted with the participant's server-assigned colour (phase2-
+ * build5, R3) so it matches that person's cursor by construction. */
+function renderPresence(/** @type {Array<{ id: string, name: string, identity: string, colour?: string }>} */ participants) {
   const host = document.getElementById("presence");
   if (!host) return;
   host.replaceChildren();
+  presenceById.clear();
   for (const p of participants) {
+    if (p.colour) presenceById.set(p.id, { name: p.name, colour: p.colour });
     const guest = p.identity === "claimed";
     const chip = document.createElement("span");
     chip.className = "presence-chip" + (guest ? " is-guest" : "");
     const initial = document.createElement("span");
     initial.className = "presence-initial";
     initial.textContent = (p.name || "?").trim().charAt(0).toUpperCase() || "?";
+    // Tint the badge with the participant's colour (R3: badge and cursor share the
+    // ONE colour, so they match by construction — for guests too, so two guests are
+    // told apart). The guest distinction stays in the "(guest)" label + chip tone,
+    // not the badge colour. White text already reads on every palette hue.
+    if (p.colour) initial.style.background = p.colour;
     const name = document.createElement("span");
     name.className = "presence-name";
     name.textContent = guest ? `${p.name} (guest)` : p.name;
@@ -185,6 +204,97 @@ function renderPresence(/** @type {Array<{ id: string, name: string, identity: s
   // #10: keep the board's LIVE room header participant count in step.
   const count = document.getElementById("room-live-count");
   if (count) count.textContent = String(participants.length);
+  // phase2-build5: a disconnect fires only a presence frame (never a `gone`
+  // cursor), so drop any drawn cursor whose participant has left.
+  for (const id of reconcileCursors([...drawnCursors.keys()], participants.map((p) => p.id))) {
+    removeCursor(id);
+  }
+}
+
+// --- phase2-build5: the live-cursor overlay layer ---------------------------
+// Decoupled from the render/paint loop (R5): render() rebuilds #board via
+// replaceChildren every paint, so cursors live in their OWN fixed overlay that
+// render() never touches and the store never drives. The overlay is updated
+// directly by the cursor message handler below. pointer-events:none (CSS) means
+// it can never become a drop target or swallow a board click.
+
+/** @type {Map<string, { el: HTMLElement, arrow: SVGElement, label: HTMLElement }>} */
+const drawnCursors = new Map();
+
+/** The board's current viewport box + full content size — the metrics both the
+ * sender (pointer -> fraction) and the receiver (fraction -> point) read from
+ * THEIR OWN board. left/top come from getBoundingClientRect (already scroll-
+ * adjusted, so NO window-scroll term is added — that would double-count). */
+function boardMetrics(/** @type {HTMLElement} */ board) {
+  const r = board.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: board.scrollWidth, height: board.scrollHeight };
+}
+
+/** Create (once) or update a remote participant's cursor at viewport point (x,y). */
+function upsertCursor(/** @type {string} */ id, /** @type {string} */ colour, /** @type {string} */ name, /** @type {number} */ x, /** @type {number} */ y) {
+  const layer = document.getElementById("cursor-layer");
+  if (!layer) return;
+  let c = drawnCursors.get(id);
+  if (!c) {
+    const el = document.createElement("div");
+    el.className = "cursor";
+    const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    arrow.setAttribute("class", "cursor-arrow");
+    arrow.setAttribute("viewBox", "0 0 14 18");
+    arrow.setAttribute("width", "14");
+    arrow.setAttribute("height", "18");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M0 0 L0 15 L4 11 L7 17 L10 16 L7 10 L13 10 Z");
+    arrow.append(path);
+    const label = document.createElement("span");
+    label.className = "cursor-label";
+    el.append(arrow, label);
+    layer.append(el);
+    c = { el, arrow, label };
+    drawnCursors.set(id, c);
+  }
+  /** @type {any} */ (c.arrow).style.fill = colour;
+  c.label.style.background = colour;
+  c.label.textContent = name; // name only; the rail owns the (guest) marker
+  c.el.style.transform = `translate(${x}px, ${y}px)`;
+}
+
+/** Remove a drawn cursor (on `gone` or a disconnect reconcile). */
+function removeCursor(/** @type {string} */ id) {
+  const c = drawnCursors.get(id);
+  if (!c) return;
+  c.el.remove();
+  drawnCursors.delete(id);
+}
+
+/** Apply one cursor frame from the room (phase2-build5). Colour + name come from
+ * the latest presence snapshot, so the frame itself stays {id, x, y | gone}. */
+function handleCursor(/** @type {HTMLElement} */ board, /** @type {{ id: string, x?: number, y?: number, gone?: boolean }} */ msg) {
+  if (msg.gone) { removeCursor(msg.id); return; }
+  if (typeof msg.x !== "number" || typeof msg.y !== "number") return;
+  const meta = presenceById.get(msg.id);
+  if (!meta) return; // no colour/name yet (presence not seen) — skip until it is
+  const pt = fromBoardFraction({ x: msg.x, y: msg.y }, boardMetrics(board));
+  upsertCursor(msg.id, meta.colour, meta.name, pt.x, pt.y);
+}
+
+/** A trailing throttle: caps calls to one per `ms` but always delivers the LAST
+ * arguments (so the final pointer position is never dropped). `.cancel()` clears a
+ * pending trailing call — used on pointerleave so no stale position lands after a
+ * `gone`. */
+function throttle(/** @type {(...a: any[]) => void} */ fn, /** @type {number} */ ms) {
+  let last = 0;
+  /** @type {ReturnType<typeof setTimeout> | null} */ let timer = null;
+  /** @type {any[]} */ let lastArgs = [];
+  const run = () => { last = performance.now(); timer = null; fn(...lastArgs); };
+  const wrapped = (/** @type {any[]} */ ...args) => {
+    lastArgs = args;
+    const wait = ms - (performance.now() - last);
+    if (wait <= 0) { if (timer) { clearTimeout(timer); } run(); }
+    else if (!timer) { timer = setTimeout(run, wait); }
+  };
+  wrapped.cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  return wrapped;
 }
 
 // Autosave: every action persists immediately (cross-cutting rule: refresh
@@ -414,6 +524,31 @@ if (IN_ROOM) {
   if (eyebrow) eyebrow.textContent = "Live room";
   const live = document.getElementById("room-live");
   if (live) live.hidden = false;
+}
+
+// phase2-build5: broadcast THIS client's pointer over the board (room mode only,
+// R2). A trailing throttle caps the socket to ~30 sends/sec while always sending
+// the final position; pointerleave clears our cursor in everyone else's window and
+// cancels any pending send so no stale position lands after the `gone`. The handler
+// reads the board's live metrics on each move, so a mid-session resize/scroll is
+// always reflected. The board element is stable across paints (render() replaces
+// its CHILDREN, not the #board node itself).
+if (IN_ROOM) {
+  // Guarded by IN_ROOM, so `store` is the room store (its only shape with the
+  // cursor transport); the cast narrows the createStore|createRoomStore union.
+  const roomStore = /** @type {ReturnType<typeof createRoomStore>} */ (store);
+  const cursorBoard = document.getElementById("board");
+  if (cursorBoard) {
+    const sendMove = throttle((/** @type {PointerEvent} */ e) => {
+      const frac = toBoardFraction({ x: e.clientX, y: e.clientY }, boardMetrics(cursorBoard));
+      roomStore.sendCursor(frac.x, frac.y);
+    }, 33);
+    cursorBoard.addEventListener("pointermove", /** @type {EventListener} */ (sendMove));
+    cursorBoard.addEventListener("pointerleave", () => {
+      sendMove.cancel();
+      roomStore.clearCursor();
+    });
+  }
 }
 
 // --- Report export (Brief 9, P0 #6, ruling G8): its OWN control, distinct from

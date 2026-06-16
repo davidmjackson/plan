@@ -1223,3 +1223,51 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 .room-live-sep { color: var(--line2); font-weight: 400; }
+
+/* === phase2-build5: live cursors ========================================== */
+
+/* A fixed, full-viewport overlay. pointer-events:none is load-bearing (R5): the
+   layer sits over the board but must NEVER intercept a click or a dragula drop.
+   Lives outside #board, so render()'s replaceChildren never wipes it. Empty +
+   inert in local mode. */
+.cursor-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 40;
+}
+
+/* One remote pointer: an arrow glyph + a name pill, moved together via transform
+   (set inline by the cursor handler). The whole node is click-through. */
+.cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  will-change: transform;
+  /* the OS pointer sits at the glyph tip; nudge so the arrow tip is the hotspot */
+  margin: -2px 0 0 -1px;
+}
+.cursor-arrow {
+  flex: none;
+  /* fill is set inline to the participant's colour; a soft outline lifts it off
+     the board whatever the cell tone underneath. */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+.cursor-label {
+  margin-top: 10px;
+  max-width: 140px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #fff; /* white reads on every palette hue */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* background is set inline to the participant's colour */
+}
