@@ -1154,7 +1154,7 @@
 }
 
 /* --- #9 return-to-backlog control: placed cards only ----------------------
-   Quiet by default, revealed on card hover or keyboard focus. Plum on hover —
+   Always visible on placed cards (discoverable, touch-friendly); plum on hover —
    the interaction accent (never capacity colours). drag.js excludes it as a
    drag handle, so grabbing it never starts a drag. */
 .bl-story-return {
@@ -1167,7 +1167,7 @@
   line-height: 1;
   cursor: pointer;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1; /* always visible on placed cards (discoverable / touch-friendly) */
   transition: opacity 100ms ease, color 100ms ease, background 100ms ease;
 }
 .bl-story:hover .bl-story-return,
