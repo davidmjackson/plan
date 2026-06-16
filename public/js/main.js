@@ -7,7 +7,9 @@
 
 import { createStore, createInitialState } from "./store.js";
 import { createRoomStore, wsTransport } from "./sync-client.js";
-import { wireCollaborate } from "./collaborate.js";
+import { wireCollaborate, openInviteModal } from "./collaborate.js";
+import { resolveJoinName } from "./room-join.js";
+import { promptForName } from "./room-gate.js";
 import {
   setStartDate,
   setDurationMonths,
@@ -131,6 +133,21 @@ function roomNackMessage(/** @type {string} */ reason) {
   return `Change not applied: ${reason}`;
 }
 
+// #3 name-on-join gate: in a room, require a real name BEFORE the socket opens.
+// The room store is created synchronously just below, and its transport/name read
+// from roomParams — so resolving the gate here (top-level await; main.js is a
+// module) and writing the chosen name back into roomParams makes both the ws URL
+// and the recorded name correct. history.replaceState keeps the name on refresh.
+// The local path has no await, so it stays byte-for-byte identical.
+if (IN_ROOM) {
+  const resolved = resolveJoinName(roomParams.get("name"));
+  if (resolved.needsPrompt) {
+    const chosen = await promptForName();
+    roomParams.set("name", chosen);
+    history.replaceState(null, "", location.pathname + "?" + roomParams.toString());
+  }
+}
+
 // The local store ALWAYS boots fresh (R2): a saved board is restored only by an
 // explicit, prompted loadPlan dispatch, never substituted at boot. Two safety
 // properties fall out — the saved board never renders under the prompt (no
@@ -165,6 +182,9 @@ function renderPresence(/** @type {Array<{ id: string, name: string, identity: s
     host.append(chip);
   }
   host.hidden = participants.length === 0;
+  // #10: keep the board's LIVE room header participant count in step.
+  const count = document.getElementById("room-live-count");
+  if (count) count.textContent = String(participants.length);
 }
 
 // Autosave: every action persists immediately (cross-cutting rule: refresh
@@ -372,8 +392,28 @@ document.getElementById("tb-export")?.addEventListener("click", () => downloadBo
 // room (you are already collaborating); in local mode it offers to start one.
 const collabBtn = document.getElementById("tb-collaborate");
 if (collabBtn) {
-  if (IN_ROOM) collabBtn.hidden = true;
-  else wireCollaborate({ button: collabBtn, getPlan: () => store.getState(), flash });
+  if (IN_ROOM) {
+    // #1: in a room the create flow is meaningless — repurpose the slot into an
+    // "Invite" control that re-surfaces THIS room's link (reconstructed from our
+    // own params, personal name stripped). Local mode keeps the create dialog.
+    collabBtn.textContent = "Invite";
+    collabBtn.addEventListener("click", () =>
+      openInviteModal({ room: roomParams.get("room") ?? "", token: roomParams.get("token") }));
+  } else {
+    wireCollaborate({ button: collabBtn, getPlan: () => store.getState(), flash });
+  }
+}
+
+// #10: in a room, give the board a live-room header treatment — the band eyebrow
+// reads as a live room, the plan title BECOMES the room name (editable and synced
+// live: SET_PLAN_TITLE is now room-allow-listed, P5 reversed on the director's
+// call), and a LIVE indicator + participant count (kept in step by renderPresence)
+// appears. Local mode shows none of it (R3).
+if (IN_ROOM) {
+  const eyebrow = document.querySelector(".band .eyebrow");
+  if (eyebrow) eyebrow.textContent = "Live room";
+  const live = document.getElementById("room-live");
+  if (live) live.hidden = false;
 }
 
 // --- Report export (Brief 9, P0 #6, ruling G8): its OWN control, distinct from

@@ -14,9 +14,11 @@ import { el } from "./dom.js";
  * @param {HTMLElement} opts.footer    the action row
  * @param {() => boolean} [opts.isDirty]  guard close when true
  * @param {() => void} [opts.onClose]  teardown run once on every close path
+ * @param {boolean} [opts.dismissable]  when false, Escape and overlay-click do NOT
+ *   close (a blocking gate, e.g. the build4 #3 name prompt); default true
  * @returns {{ close: () => void, attemptClose: () => void, card: HTMLElement }}
  */
-export function openModal({ heading, content, footer, isDirty, onClose }) {
+export function openModal({ heading, content, footer, isDirty, onClose, dismissable = true }) {
   const overlay = el("div", "modal-overlay");
   const card = el("div", "modal-card");
   const h = el("h2", "modal-heading", heading);
@@ -58,14 +60,14 @@ export function openModal({ heading, content, footer, isDirty, onClose }) {
 
   /** @param {KeyboardEvent} e */
   function onKey(e) {
-    if (e.key === "Escape") {
+    if (e.key === "Escape" && dismissable) {
       e.preventDefault();
       attemptClose();
     }
   }
 
   overlay.addEventListener("mousedown", (e) => {
-    if (e.target === overlay) attemptClose();
+    if (dismissable && e.target === overlay) attemptClose();
   });
   document.addEventListener("keydown", onKey);
 
