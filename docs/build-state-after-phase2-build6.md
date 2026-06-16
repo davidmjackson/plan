@@ -2,7 +2,7 @@
 
 **Purpose**: Ground the next session in what the code *actually is* after phase2-build6, not just what the specs say. Drafted by Claude Code (Opus 4.8) from the live build. This snapshot supersedes `build-state-after-phase2-build5.md` (now in `docs/archive/`). **The MVP shipped (briefs 1–10), Phase 2 added live multiplayer rooms (spike → MP1–MP6 → live launch), then post-launch builds: build1–build4 cleared the UAT backlog, build5 added live cursors + coloured avatars (sealed model), and phase2-build6 is the deliberate INVERSE of build5 — the first intentional schema-and-op extension since the dependency work: a story-level "stretch" toggle (P1).**
 
-**As of**: phase2-build6 **shipped via PR #38** (merge commit `MERGE_SHA`). **`main` now at `MERGE_SHA`.** `origin == local`. Tree: **233 unit/integration tests green** (`npm test`, drift gate first), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. Director signed off ("all good") after a local-mode + two-browser-room UAT.
+**As of**: phase2-build6 **shipped via PR #38** (merge commit `c2c1fc0`). **`main` now at `c2c1fc0`.** `origin == local`. Tree: **233 unit/integration tests green** (`npm test`, drift gate first), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. Director signed off ("all good") after a local-mode + two-browser-room UAT.
 
 **Companions**: sprintplan-mvp-spec.md, aide-rules-of-engagement.md, build-log.md, docs/README.md, phase2-build6.md, housekeeping-dragula-vendoring.md, demo-data.md, and `docs/archive/` (briefs 1–10, the phase2 MP1–6 + spike briefs/findings, the post-launch build1–5 briefs, and build-states after build1–build5).
 
@@ -70,7 +70,7 @@ Local stretch UAT: run `node server/dev-rooms.js` **in your own terminal** (a ba
 
 ## Branch / merge model
 
-`main` carries briefs 1–10, the Phase 2 spike + MP1–MP6 + launch follow-ups, build1 (PR #26), build2 (#27 `a2d132c`; docs #28–#30), build3 (#31 `f2be8dd`; dev-bind #32 `cf2a800`; #33 `abcb1b0`; #34 `460de4a`), build4 (#35 `fac0266`; #36 `987aa00`), build5 (#37 `c6a4c68`; docs/SHA `9845220`; docs-tidy `6506a4f`), and **build6 (PR #38, `MERGE_SHA`)** — all merge commits so the build-log's per-build SHA references stay valid. Per-build feature branches off `main`.
+`main` carries briefs 1–10, the Phase 2 spike + MP1–MP6 + launch follow-ups, build1 (PR #26), build2 (#27 `a2d132c`; docs #28–#30), build3 (#31 `f2be8dd`; dev-bind #32 `cf2a800`; #33 `abcb1b0`; #34 `460de4a`), build4 (#35 `fac0266`; #36 `987aa00`), build5 (#37 `c6a4c68`; docs/SHA `9845220`; docs-tidy `6506a4f`), and **build6 (PR #38, `c2c1fc0`)** — all merge commits so the build-log's per-build SHA references stay valid. Per-build feature branches off `main`.
 
 ---
 
