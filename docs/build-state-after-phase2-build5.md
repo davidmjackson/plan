@@ -2,7 +2,7 @@
 
 **Purpose**: Ground the next session in what the code *actually is* after phase2-build5, not just what the specs say. Drafted by Claude Code (Opus 4.8) from the live build. This snapshot supersedes `build-state-after-phase2-build4.md` (now in `docs/archive/`). **The MVP shipped (briefs 1–10), Phase 2 added live multiplayer rooms (spike → MP1–MP6 → live launch), then four post-launch builds cleared the entire UAT backlog (build1–build4). phase2-build5 is the FIRST net-new direction since: live cursors (the headline) + coloured participant avatars (the foundation), un-parking the MP5 "live cursors" item.**
 
-**As of**: phase2-build5 **shipped via PR #37** (merge commit `MERGE_SHA`). **`main` now at `MERGE_SHA`.** `origin == local`. Tree: **217 unit/integration tests green** (`npm test`, drift gate first), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. Director signed off ("All working") after a two-browser-room UAT including the independent-scroll check.
+**As of**: phase2-build5 **shipped via PR #37** (merge commit `c6a4c68`). **`main` now at `c6a4c68`.** `origin == local`. Tree: **217 unit/integration tests green** (`npm test`, drift gate first), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. Director signed off ("All working") after a two-browser-room UAT including the independent-scroll check.
 
 **Companions**: sprintplan-mvp-spec.md, aide-rules-of-engagement.md, build-log.md, docs/README.md, phase2-build5.md, housekeeping-dragula-vendoring.md, demo-data.md, and `docs/archive/` (briefs 1–10, the phase2 MP1–6 + spike briefs/findings, and build-states after build1–build4).
 
@@ -77,7 +77,7 @@ sockets keep the loop alive).
 `main` carries briefs 1–10, the Phase 2 spike + MP1–MP6 + launch follow-ups, phase2-build1 (PR #26),
 build2 (PR #27 `a2d132c`; doc PRs #28–#30), build3 (PR #31 `f2be8dd`; dev-bind fix #32 `cf2a800`;
 sign-off #33 `abcb1b0`; build-state #34 `460de4a`), build4 (PR #35 `fac0266`; sign-off/build-state
-#36 `987aa00`), and **build5 (PR #37, `MERGE_SHA`)** — all merge commits (not squash/rebase) so the
+#36 `987aa00`), and **build5 (PR #37, `c6a4c68`)** — all merge commits (not squash/rebase) so the
 build-log's per-build SHA references stay valid. Per-build feature branches off `main`. The rooms
 service's suite-side pieces live in `davidmjackson/suite`.
 
