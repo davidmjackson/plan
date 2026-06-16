@@ -1,6 +1,6 @@
 # sprintplan.uk - MVP Specification (v0.5)
 
-**Status**: Decisions locked, user journeys mapped, v1 screens designed (docs/v1-screen-designs.md), ready for build briefs
+**Status**: SHIPPED. MVP P0 (briefs 1-10) and Phase 2 live multiplayer (spike → MP1-MP6 → launch) are live; post-launch builds 1-6 shipped, including the P1 stretch toggle (phase2-build6). This remains the locked reference for the original P0/P1 scope and resolved decisions; current behaviour lives in the latest build-state and the source.
 **Owner**: [You]
 **Type**: Free showcase app / AI-Directed Engineering training project
 **Date**: June 2026
@@ -59,7 +59,7 @@ Scrum Master / Delivery Manager / team lead facilitating quarterly or monthly pl
 
 ### Nice-to-Have (P1, fast follow)
 
-- Story-level "stretch" toggle: stories in an over-capacity sprint can be marked as stretch; they stay counted in totals and are listed separately in the report (honesty preserved, rationalisation visible)
+- Story-level "stretch" toggle **(shipped — phase2-build6)**: stories in an over-capacity sprint can be marked as stretch; they stay counted in totals and are listed separately in the report (honesty preserved, rationalisation visible)
 - Contextual tooltips on key concepts (velocity, buffer %, capacity thresholds, dependencies)
 - Unplanned/parked lane for stories that don't fit the window
 - Colour tags or labels on cards
@@ -111,6 +111,7 @@ This is a showcase/training project, so metrics are weighted to learning and usa
 
 ## Change Log
 
+- **Status refresh (16 Jun 2026)**: No scope change. Status line updated to reflect shipped state (MVP + Phase 2 multiplayer live; build6 shipped the P1 stretch toggle). Body unchanged; this stays the locked reference spec.
 - **v0.5 (11 Jun 2026)**: Screen design errata (see docs/v1-screen-designs.md, rulings G1-G8). P0 #1 gains a plan start date (default next Monday) and an optional plan title, both forced additions discovered at screen design. Partial final sprint capacity is prorated (resolved decision 2). Points input fixed as Fibonacci chips plus free entry (resolved decision 1). New resolved decision 7: settings changes never destroy data.
 - **v0.4 (11 Jun 2026)**: User journeys mapped (see docs/user-journeys.md and linked Lucid documents). P0 #5 dependency model expanded: either-side creation, 1-to-many, shared badges, same-sprint tether without auto-move, on-demand cross-sprint connectors, red violations in board and export. New resolved decisions 5 and 6: vertical-time board layout with majority-rule month rail; stack order as facilitation signal only.
 - **v0.3**: Decisions locked: points-only estimation, 1-4 week sprints, three export formats, suite branding.

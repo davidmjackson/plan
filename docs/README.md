@@ -34,10 +34,11 @@ Historical, superseded, or completed documents. Kept for the build-log's per-bri
 references and for project history; **not** current working docs.
 
 - `brief1.md` … `brief10.md` — the per-brief instructions for the MVP P0 track (briefs 1–10). All shipped and merged; the live source and `build-state-after-brief10.md` are the current truth.
-- `build-state-after-brief1.md` … `build-state-after-brief9.md` — superseded build-state snapshots, each the ground-truth handoff for one brief, all superseded by `build-state-after-brief10.md`.
+- `build-state-after-brief1.md` … `build-state-after-brief10.md` — superseded build-state snapshots, each the ground-truth handoff for one brief. `build-state-after-brief10.md` is the last MVP-track snapshot (superseded earlier ones); it is in turn superseded by the Phase 2 build-states.
 - `phase2-multiplayer-feasibility.md`, `phase2-multiplayer-spike-brief.md`, `phase2-multiplayer-spike-build-brief.md`, `phase2-multiplayer-spike-propose.md`, `phase2-multiplayer-spike-finding.md` — the multiplayer feasibility study and spike exploration that produced the GO decision.
 - `phase2-mp1-client-sync-brief.md`, `phase2-mp2-company-auth-brief.md`, `phase2-mp2-hub-registration.md`, `phase2-mp3-conflict-refine-brief.md`, `phase2-mp4-collab-bridge-brief.md`, `phase2-mp5-presence-brief.md`, `phase2-mp6-deploy-brief.md` — the per-slice multiplayer productionise briefs (MP1–MP6). All shipped; the live source is the truth. (The MP6 deploy **runbook** stays live in `docs/` as an operational doc.)
 - `phase2-build1.md` … `phase2-build5.md` (and `phase2-build2-pr27-commit-runbook.md`) — the post-launch build briefs (build1 dependency-in-a-room fix, build2 connector arrowhead, build3 demo/clear+capacity bar+return-to-backlog, build4 collaboration polish, build5 live cursors + coloured avatars). All shipped and merged; the build-log + build-states are the current truth. Their per-build build-states (`build-state-after-phase2-build1..5.md`) are archived alongside.
+- `housekeeping-doc-audit.md` — the post-build6 docs audit (archiving + stale-timeline pass). All items actioned 16 Jun 2026 and archived; carries an archived banner noting its in-root snapshot is frozen.
 
 ## Conventions going forward
 

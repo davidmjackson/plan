@@ -1,6 +1,6 @@
 # sprintplan.uk - v1 Screen Designs (v1.0)
 
-**Status**: Design rulings closed by owner, 11 June 2026. Ready for build briefs.
+**Status**: SHIPPED. The eight design rulings (G1–G8) are closed and built into the MVP (briefs 1–10) and live in the source (see the G-ruling references in `main.js` / `epic-palette.js`). This stays the locked screen-level contract for v1 scope and rulings.
 **Owner**: [You]
 **Companions**: sprintplan-mvp-spec.md (v0.5), user-journeys.md (v1.0)
 **Date**: 11 June 2026
@@ -160,4 +160,5 @@ No wizard (journey sign-off). A persistent one-line strip between the band and t
 
 ## Change log
 
+- **Status refresh (16 Jun 2026)**: No scope change. Status line updated from "ready for build briefs" to SHIPPED — the G1–G8 rulings are built and cited in the live source. Body unchanged; this stays the locked screen-level contract.
 - **v1.0 (11 Jun 2026)**: Initial version. G1-G8 rulings recorded; five screens specified against the Instrument theme.
