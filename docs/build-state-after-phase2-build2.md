@@ -1,10 +1,10 @@
 # Build state after phase2-build2 — handoff (dependency arrow now points at the depended-on story)
 
-**Purpose**: Ground the next session in what the code *actually is* after phase2-build2, not just what the specs say. Drafted by Claude Code (Opus 4.8) from the live build. This snapshot supersedes `build-state-after-phase2-build1.md` (which should move to `docs/archive/` at the next cleanup). **The MVP shipped (briefs 1–10), Phase 2 added live multiplayer rooms (spike → MP1–MP6 → live launch), phase2-build1 fixed the dependency room-sync defect, and this build fixed the connector arrowhead — the second post-launch UAT defect: the dependency arrowhead pointed flat along the line instead of at the depended-on story.**
+**Purpose**: Ground the next session in what the code *actually is* after phase2-build2, not just what the specs say. Drafted by Claude Code (Opus 4.8) from the live build. This snapshot supersedes `build-state-after-phase2-build1.md` (now in `docs/archive/`). **The MVP shipped (briefs 1–10), Phase 2 added live multiplayer rooms (spike → MP1–MP6 → live launch), phase2-build1 fixed the dependency room-sync defect, and this build fixed the connector arrowhead — the second post-launch UAT defect: the dependency arrowhead pointed flat along the line instead of at the depended-on story.**
 
 **As of**: phase2-build2 committed at `1146837` on `feat-phase2-build2-connector-arrowhead`; **PR #27 open, awaiting merge to `main`** (`main` still at `3c36755` = phase2-build1 + docs reorg). On merge (`--merge`, not squash), update this SHA. Tree: **185 unit/integration tests green** (`npm test`, which runs the theme-drift gate *first*), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. `origin == local` on the feature branch.
 
-**Companions**: sprintplan-mvp-spec.md, aide-rules-of-engagement.md, build-log.md, docs/README.md, phase2-build2.md, housekeeping-dragula-vendoring.md, demo-data.md, and `docs/archive/` (briefs 1–10, their build-states, the phase2 MP1–6 + spike briefs/findings, and — at next cleanup — build-state-after-phase2-build1.md).
+**Companions**: sprintplan-mvp-spec.md, aide-rules-of-engagement.md, build-log.md, docs/README.md, phase2-build2.md, housekeeping-dragula-vendoring.md, demo-data.md, and `docs/archive/` (briefs 1–10, their build-states, the phase2 MP1–6 + spike briefs/findings, and build-state-after-phase2-build1.md).
 
 ---
 
