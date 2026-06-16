@@ -1050,11 +1050,17 @@
 }
 
 /* MP5 — live presence strip (room mode). Initial chips with a guest marker. */
+/* #2 (phase2-build4): presence is a vertical LEFT RAIL inside .workspace, room
+   mode only (renderPresence sets `hidden` when empty, so local mode reserves no
+   space). The chips keep their pill vocabulary, stacked. */
 .presence {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 6px;
-  flex-wrap: wrap;
+  flex: 0 0 160px;
+  width: 160px;
+  padding-top: 2px;
 }
 .presence-chip {
   display: inline-flex;
@@ -1186,3 +1192,34 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+/* === phase2-build4 ======================================================== */
+
+/* --- #10 live-room header treatment (room mode only) ----------------------
+   The plan title becomes the room name; this adds a LIVE indicator + live
+   participant count under it. Plum is the interaction accent (amber/red stay
+   reserved for capacity); no new design language. */
+.room-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--plum);
+}
+.room-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--plum);
+  animation: room-live-pulse 2s ease-out infinite;
+}
+@keyframes room-live-pulse {
+  0% { box-shadow: 0 0 0 0 var(--plumwash); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.room-live-sep { color: var(--line2); font-weight: 400; }

@@ -18,8 +18,6 @@
           <span>sprintplan</span>
         </p>
       </span>
-      <!-- MP5: live presence strip — populated in room mode only, hidden otherwise. -->
-      <div id="presence" class="presence" hidden></div>
       <div class="tbacts">
         <details class="export-menu" id="tb-report">
           <summary class="btn btn-ghost btn-sm">Export summary ▾</summary>
@@ -60,6 +58,13 @@
         <h1 id="plan-title" contenteditable="true" spellcheck="false"
             role="textbox" aria-label="Plan name" aria-multiline="false"
             enterkeyhint="done" data-placeholder="Untitled plan"></h1>
+        <!-- #10: live-room indicator + participant count, revealed in room mode (main.js). -->
+        <div id="room-live" class="room-live" hidden>
+          <span class="room-live-dot" aria-hidden="true"></span>
+          <span class="room-live-label">LIVE</span>
+          <span class="room-live-sep" aria-hidden="true">·</span>
+          <span id="room-live-count">0</span>&nbsp;here
+        </div>
         <p class="sub">What can the team realistically deliver, sprint by sprint?</p>
       </div>
     </div>
@@ -113,6 +118,9 @@
     <div class="plan-bar" id="plan-bar" aria-live="polite"></div>
 
     <div class="workspace">
+      <!-- #2: live presence as a left rail (room mode only; renderPresence targets it,
+           sets hidden when empty so local mode reserves no space). -->
+      <div id="presence" class="presence" hidden></div>
       <main class="board" id="board"></main>
       <aside class="backlog" id="backlog" aria-label="Backlog"></aside>
     </div>

@@ -12,6 +12,7 @@
 
 import { el } from "./dom.js";
 import { openModal } from "./modal.js";
+import { buildInviteUrl } from "./room-join.js";
 
 /**
  * @param {{ button: HTMLElement, getPlan: () => any, flash: (msg: string) => void }} deps
@@ -87,12 +88,10 @@ function openCreateDialog(getPlan, flash) {
   });
 }
 
-/** Replace the dialog body with the share link + copy / open actions. */
-function showShareLink(/** @type {HTMLElement} */ content, /** @type {HTMLElement} */ footer, /** @type {any} */ room) {
-  const url = `${location.origin}/?room=${encodeURIComponent(room.id)}&token=${encodeURIComponent(room.shareToken)}`;
-
+/** A read-only link field with the invite URL; returns the input for select-fallback. */
+function linkPane(/** @type {HTMLElement} */ content, /** @type {string} */ url, /** @type {string} */ intro) {
   content.replaceChildren();
-  content.append(el("p", "field-hint", "Room created. Share this link — anyone with it joins the live board:"));
+  content.append(el("p", "field-hint", intro));
   const field = el("div", "field");
   const input = /** @type {HTMLInputElement} */ (el("input", "input mono"));
   input.type = "text";
@@ -100,18 +99,55 @@ function showShareLink(/** @type {HTMLElement} */ content, /** @type {HTMLElemen
   input.readOnly = true;
   field.append(input);
   content.append(field);
+  return input;
+}
 
-  footer.replaceChildren();
-  const right = el("div", "modal-footer-right");
+/** A copy-to-clipboard button for the invite URL (select-fallback if blocked). */
+function copyBtn(/** @type {string} */ url, /** @type {HTMLInputElement} */ input) {
   const copy = el("button", "btn btn-ghost", "Copy link");
   copy.setAttribute("type", "button");
   copy.addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(url); copy.textContent = "Copied"; }
     catch { input.select(); }
   });
+  return copy;
+}
+
+/** Replace the create-dialog body with the share link + copy / open actions. */
+function showShareLink(/** @type {HTMLElement} */ content, /** @type {HTMLElement} */ footer, /** @type {any} */ room) {
+  const url = buildInviteUrl(location.origin, { room: room.id, token: room.shareToken });
+  const input = linkPane(content, url, "Room created. Share this link — anyone with it joins the live board:");
+
+  footer.replaceChildren();
+  const right = el("div", "modal-footer-right");
   const open = el("button", "btn btn-pri", "Open room");
   open.setAttribute("type", "button");
   open.addEventListener("click", () => { location.href = url; });
-  right.append(copy, open);
+  right.append(copyBtn(url, input), open);
   footer.append(right);
+}
+
+/**
+ * #1: re-open the invite link from INSIDE a room. Reconstructs the current
+ * room's link from its own params (no server round trip) with personal params
+ * stripped, so each invitee sets their own name (the #3 gate handles them).
+ * @param {{ room: string, token?: string | null }} source
+ */
+export function openInviteModal(source) {
+  const url = buildInviteUrl(location.origin, source);
+  const content = el("div", "modal-body");
+  const input = linkPane(content, url, "Share this link to invite people to this room. Each person sets their own name as they join:");
+
+  const footer = el("div", "modal-footer");
+  const right = el("div", "modal-footer-right");
+  const openTab = el("button", "btn btn-ghost", "Open in new tab");
+  openTab.setAttribute("type", "button");
+  openTab.addEventListener("click", () => { window.open(url, "_blank", "noopener"); });
+  const done = el("button", "btn btn-pri", "Done");
+  done.setAttribute("type", "button");
+  right.append(copyBtn(url, input), openTab, done);
+  footer.append(right);
+
+  const modal = openModal({ heading: "Invite to this room", content, footer });
+  done.addEventListener("click", () => modal.close());
 }
