@@ -67,6 +67,12 @@ export function openCardEditor(store, opts = {}) {
   epicField.append(newEpicWrap);
   content.append(epicField);
 
+  // A room-created epic isn't in state until the server echoes it (pessimistic
+  // store). Record the id to select; syncFromState selects it once it lands.
+  // Locally the echo is synchronous, so selection still feels instant (R4).
+  /** @type {string | null} */
+  let pendingEpicSelect = null;
+
   /** @param {string | null} selectedId */
   function refreshEpicOptions(selectedId) {
     epicSelect.replaceChildren();
@@ -90,10 +96,10 @@ export function openCardEditor(store, opts = {}) {
     const title = newEpicInput.value.trim();
     if (!isNonEmptyTitle(title)) return;
     const action = addEpic({ title }); // id minted here, before dispatch
+    pendingEpicSelect = action.payload.id; // select it when state confirms (R1)
     store.dispatch(action);
     newEpicInput.value = "";
     newEpicWrap.hidden = true;
-    refreshEpicOptions(action.payload.id); // select the new epic
   });
 
   // Points: Fibonacci chips + free entry ----------------------------------
@@ -140,9 +146,8 @@ export function openCardEditor(store, opts = {}) {
   content.append(summaryField);
 
   // Dependencies (Brief 7) — only for a saved story; commits live ----------
-  if (isEdit && existing) {
-    content.append(buildDependencies(store, existing.id));
-  }
+  const deps = isEdit && existing ? buildDependencies(store, existing.id) : null;
+  if (deps) content.append(deps.section);
 
   // Dirty tracking --------------------------------------------------------
   const snapshot = () => JSON.stringify({
@@ -170,11 +175,24 @@ export function openCardEditor(store, opts = {}) {
   right.append(cancel, save);
   footer.append(right);
 
+  // React to store NOTIFICATIONS, never to the return of dispatch (R1): one
+  // handler keeps the epic select and the dependency rows in step under both the
+  // synchronous local store and the pessimistic room store. The view cannot tell
+  // which it holds. Torn down on modal close (R5) so reopening never stacks subs.
+  function syncFromState() {
+    const epicArrived = pendingEpicSelect != null && store.getState().epics[pendingEpicSelect];
+    refreshEpicOptions(epicArrived ? pendingEpicSelect : epicSelect.value || null);
+    if (epicArrived) pendingEpicSelect = null;
+    deps?.renderRows();
+  }
+  const unsubscribe = store.subscribe(syncFromState);
+
   const modal = openModal({
     heading: isEdit ? "Edit story" : "New story",
     content,
     footer,
     isDirty,
+    onClose: unsubscribe,
   });
 
   cancel.addEventListener("click", () => modal.attemptClose());
@@ -217,10 +235,14 @@ export function openCardEditor(store, opts = {}) {
  * links as rows (shared badge, direction, paired title + location, remove), with
  * a violating row in the red treatment annotated with the other side's location.
  * "This blocks..." / "This needs..." open an inline picker grouped by location;
- * selecting dispatches LINK_DEP. Every dispatch re-renders this section in place
- * (the board/backlog re-render from their own store subscription).
+ * selecting dispatches LINK_DEP. The rows re-render from the caller's store
+ * subscription (syncFromState), never from a synchronous read after dispatch, so
+ * a link created in a room appears once the server echo lands — identical code
+ * under the synchronous local store and the pessimistic room store (R1). Returns
+ * the section plus renderRows so the caller can drive it on every notification.
  * @param {ReturnType<import("./store.js").createStore>} store
  * @param {string} storyId
+ * @returns {{ section: HTMLElement, renderRows: () => void }}
  */
 function buildDependencies(store, storyId) {
   const section = el("div", "field deps-section");
@@ -266,7 +288,7 @@ function buildDependencies(store, storyId) {
       remove.setAttribute("aria-label", `Remove dependency ${row.label}`);
       remove.addEventListener("click", () => {
         store.dispatch(unlinkDep({ id: row.dep.id }));
-        renderRows();
+        // No synchronous re-render: the row clears when state confirms (R1).
       });
       r.append(remove);
       rows.append(r);
@@ -312,9 +334,9 @@ function buildDependencies(store, storyId) {
                 ? { blockerId: storyId, blockedId: t.id }
                 : { blockerId: t.id, blockedId: storyId };
             store.dispatch(linkDep(payload));
-            picker.hidden = true;
+            picker.hidden = true; // optimistic: hide the picker (a UI affordance)
             picker.replaceChildren();
-            renderRows();
+            // The new row appears when state confirms the link (R1).
           });
           list.append(opt);
         }
@@ -329,8 +351,8 @@ function buildDependencies(store, storyId) {
   blocksBtn.addEventListener("click", () => openPicker("blocks"));
   needsBtn.addEventListener("click", () => openPicker("needs"));
 
-  renderRows();
-  return section;
+  renderRows(); // first paint; subsequent updates come from syncFromState (R1)
+  return { section, renderRows };
 }
 
 /**

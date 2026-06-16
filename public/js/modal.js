@@ -13,9 +13,10 @@ import { el } from "./dom.js";
  * @param {HTMLElement} opts.content   the field body
  * @param {HTMLElement} opts.footer    the action row
  * @param {() => boolean} [opts.isDirty]  guard close when true
+ * @param {() => void} [opts.onClose]  teardown run once on every close path
  * @returns {{ close: () => void, attemptClose: () => void, card: HTMLElement }}
  */
-export function openModal({ heading, content, footer, isDirty }) {
+export function openModal({ heading, content, footer, isDirty, onClose }) {
   const overlay = el("div", "modal-overlay");
   const card = el("div", "modal-card");
   const h = el("h2", "modal-heading", heading);
@@ -29,6 +30,7 @@ export function openModal({ heading, content, footer, isDirty }) {
   function close() {
     document.removeEventListener("keydown", onKey);
     overlay.remove();
+    onClose?.(); // R5: teardown (e.g. store unsubscribe) on every close path
   }
 
   function attemptClose() {
