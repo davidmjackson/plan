@@ -2,7 +2,7 @@
 
 **Purpose**: Ground the next session in what the code *actually is* after phase2-build2, not just what the specs say. Drafted by Claude Code (Opus 4.8) from the live build. This snapshot supersedes `build-state-after-phase2-build1.md` (now in `docs/archive/`). **The MVP shipped (briefs 1–10), Phase 2 added live multiplayer rooms (spike → MP1–MP6 → live launch), phase2-build1 fixed the dependency room-sync defect, and this build fixed the connector arrowhead — the second post-launch UAT defect: the dependency arrowhead pointed flat along the line instead of at the depended-on story.**
 
-**As of**: phase2-build2 committed at `1146837` on `feat-phase2-build2-connector-arrowhead`; **PR #27 open, awaiting merge to `main`** (`main` still at `3c36755` = phase2-build1 + docs reorg). On merge (`--merge`, not squash), update this SHA. Tree: **185 unit/integration tests green** (`npm test`, which runs the theme-drift gate *first*), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`. `origin == local` on the feature branch.
+**As of**: phase2-build2 **merged to `main` via PR #27** (merge commit `a2d132c`, feature work `1146837`). Two doc-only follow-ups then merged: **PR #28** (`f2e03a8`) — the `dep-selectors.js` head-at-blocker JSDoc fix + post-review note; **PR #29** (`6ed0599`) — the phase2-build3 brief + log entry. **`main` now at `6ed0599`**, `origin == local`. Tree: **185 unit/integration tests green** (`npm test`, which runs the theme-drift gate *first*), `tsc --noEmit` clean, theme-drift `ok: /var/www/plan`.
 
 **Companions**: sprintplan-mvp-spec.md, aide-rules-of-engagement.md, build-log.md, docs/README.md, phase2-build2.md, housekeeping-dragula-vendoring.md, demo-data.md, and `docs/archive/` (briefs 1–10, their build-states, the phase2 MP1–6 + spike briefs/findings, and build-state-after-phase2-build1.md).
 
@@ -81,7 +81,7 @@ from the server's authoritative `state` frame (no localStorage). Local mode = th
 
 `main` carries briefs 1–10, the Phase 2 spike + MP1–MP6 slices + the launch follow-ups, and
 phase2-build1 (PR #26), all merged with merge commits (not squash/rebase) so the build-log's
-per-build SHA references stay valid. **phase2-build2 is PR #27, awaiting merge** the same way.
+per-build SHA references stay valid. **phase2-build2 merged the same way (PR #27, `a2d132c`)**, followed by doc-only PRs #28 (`f2e03a8`) and #29 (`6ed0599`).
 Per-build feature branches off `main`. The rooms service's suite-side pieces (hub registration,
 theme) live in `davidmjackson/suite`.
 
