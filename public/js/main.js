@@ -17,6 +17,7 @@ import {
   setPlanTitle,
   loadPlan,
   newPlan,
+  moveStory,
 } from "./actions.js";
 import { nextMonday } from "./date.js";
 import { validatePlan, migratePlan, exportPlan, extractPlan } from "./plan-io.js";
@@ -24,6 +25,7 @@ import { reportModel, toMarkdown, toHtml, toCsv } from "./report.js";
 import { render } from "./render.js";
 import { toggleCollapsed } from "./backlog.js";
 import { openCardEditor } from "./card-editor.js";
+import { confirmModal } from "./modal.js";
 import { openEpicEditor } from "./epic-editor.js";
 import { setupDrag, isDragging } from "./drag.js";
 import { dismissBanner, clearDismissedBanners } from "./banner.js";
@@ -267,6 +269,15 @@ boardEl?.addEventListener("click", (e) => {
       dismissBanner(Number(target.dataset.sprintIndex));
       paint(store.getState()); // dismiss is view state; re-render + re-wire drag
       break;
+    case "return-to-backlog":
+      // #9: send a placed card home via the existing MOVE_STORY (allow-listed,
+      // so it round-trips in a room). beforeId null = append to the backlog end.
+      // A manual return fires no toast (the reducer leaves lastReturnedStoryIds
+      // empty); only a settings-regeneration return toasts.
+      if (target.dataset.story) {
+        store.dispatch(moveStory({ storyId: target.dataset.story, target: { kind: "backlog" }, beforeId: null }));
+      }
+      break;
   }
 });
 
@@ -394,6 +405,29 @@ document.querySelectorAll("[data-export]").forEach((btn) =>
  * successful import closes it; mid-session (no prompt) it stays null. */
 let activePrompt = null;
 
+// The single load boundary, shared by file-import and the #7 demo button so both
+// run one identical, tested path: extract -> migrate -> validate -> loadPlan.
+// ATOMIC (R3): any failure flashes a reason and dispatches nothing. Returns true
+// on success so callers can run their own post-steps (prompt close / success
+// flash). Banner re-arming is the caller's job (the demo button re-arms; import
+// keeps its prior behaviour).
+/**
+ * @param {unknown} parsed
+ * @param {"file" | "restore"} mode
+ * @param {string} failPrefix
+ * @returns {boolean}
+ */
+function loadParsedPlan(parsed, mode, failPrefix) {
+  const ext = extractPlan(parsed, mode);
+  if (!ext.ok) return flash(`${failPrefix}: ${ext.reason}.`), false;
+  const mig = migratePlan(ext.plan);
+  if (!mig.ok) return flash(`${failPrefix}: ${mig.reason}.`), false;
+  const val = validatePlan(mig.plan);
+  if (!val.ok) return flash(`${failPrefix}: ${val.reason}.`), false;
+  store.dispatch(loadPlan(normalise(val.plan))); // autosaves + repaints for free
+  return true;
+}
+
 // Import a board file: ATOMIC (R3) — validate fully before any dispatch, so a
 // bad or foreign file leaves the current board exactly as it was.
 const fileInput = /** @type {HTMLInputElement | null} */ (document.getElementById("board-file"));
@@ -408,17 +442,74 @@ fileInput?.addEventListener("change", async () => {
   } catch {
     return flash("Import failed: that file isn't valid JSON.");
   }
-  const ext = extractPlan(parsed, "file");
-  if (!ext.ok) return flash(`Import failed: ${ext.reason}.`);
-  const mig = migratePlan(ext.plan);
-  if (!mig.ok) return flash(`Import failed: ${mig.reason}.`);
-  const val = validatePlan(mig.plan);
-  if (!val.ok) return flash(`Import failed: ${val.reason}.`);
-  store.dispatch(loadPlan(normalise(val.plan))); // autosaves + repaints for free
+  if (!loadParsedPlan(parsed, "file", "Import failed")) return;
   activePrompt?.close(); // a load-time import closes the prompt; mid-session it is null
   activePrompt = null;
   flash("Board imported.");
 });
+
+// --- #7: one-click demo + clear (LOCAL MODE ONLY) --------------------------
+// NEW_PLAN / LOAD_PLAN are not room ops, so both controls hide in a room (like
+// Collaborate) and are never dispatched there. Each REPLACES the whole plan, so
+// when the board holds real work they confirm first; an empty board skips it.
+
+/** A board with no epics and no stories is "empty" — nothing to lose on replace.
+ * @param {import("./store.js").PlanState} s */
+function isBoardEmpty(s) {
+  return Object.keys(s.epics).length === 0 && Object.keys(s.stories).length === 0;
+}
+
+/**
+ * Run a whole-plan replace, confirming first when the board is non-empty (R3).
+ * @param {() => void} run
+ * @param {{ heading: string, message: string, confirmLabel: string }} prompt
+ */
+function replacePlan(run, prompt) {
+  if (isBoardEmpty(store.getState())) return run();
+  confirmModal({ ...prompt, danger: true, onConfirm: run });
+}
+
+// Demo = fetch the bundled sample and run it through the SAME import boundary
+// (atomic: a fetch or pipeline failure flashes a reason and changes nothing).
+async function loadDemo() {
+  let parsed;
+  try {
+    const res = await fetch("/samples/sample-plan.json");
+    if (!res.ok) return flash("Demo load failed: could not fetch the sample.");
+    parsed = await res.json();
+  } catch {
+    return flash("Demo load failed: could not fetch the sample.");
+  }
+  clearDismissedBanners(); // R4: a whole-plan replace re-arms the per-sprint banners
+  if (loadParsedPlan(parsed, "file", "Demo load failed")) flash("Demo plan loaded.");
+}
+
+// Clear = the resume prompt's "Start new" path: a fresh plan anchored at today.
+function clearPlan() {
+  clearDismissedBanners(); // R4
+  store.dispatch(newPlan(nextMonday(todayISO())));
+  flash("Cleared to a new plan.");
+}
+
+const demoBtn = document.getElementById("tb-demo");
+const clearBtn = document.getElementById("tb-clear");
+if (IN_ROOM) {
+  if (demoBtn) demoBtn.hidden = true;
+  if (clearBtn) clearBtn.hidden = true;
+} else {
+  demoBtn?.addEventListener("click", () =>
+    replacePlan(() => void loadDemo(), {
+      heading: "Load the demo plan?",
+      message: "This replaces your current board with the sample plan. Your current work will be lost.",
+      confirmLabel: "Load demo",
+    }));
+  clearBtn?.addEventListener("click", () =>
+    replacePlan(clearPlan, {
+      heading: "Clear the plan?",
+      message: "This clears the board to a fresh, empty plan. Your current work will be lost.",
+      confirmLabel: "Clear plan",
+    }));
+}
 
 // --- Load-time gate: the Resume / New-plan prompt (Screen 3, R1/R2) ---------
 // The store already booted fresh and painted an empty board. Now classify the

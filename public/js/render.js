@@ -8,7 +8,7 @@
 import { sprintCapacity, pillState, adjustedCapacity, overBy } from "./plan-maths.js";
 import { assignSprintsToMonths } from "./month-rail.js";
 import { renderBacklog, storyCard } from "./backlog.js";
-import { sprintPlacedPoints } from "./board-selectors.js";
+import { sprintPlacedPoints, planBarData } from "./board-selectors.js";
 import { depBadges } from "./dep-selectors.js";
 import { bannerEl, isBannerDismissed } from "./banner.js";
 import { drawConnectors } from "./connectors.js";
@@ -145,7 +145,7 @@ export function renderBoard(state) {
         const story = state.stories[id];
         if (!story) continue;
         const epic = story.epicId ? state.epics[story.epicId] ?? null : null;
-        body.appendChild(storyCard(story, epic, depBadges(state, story.id)));
+        body.appendChild(storyCard(story, epic, depBadges(state, story.id), true));
       }
     }
     el.appendChild(body);
@@ -160,12 +160,45 @@ export function renderBoard(state) {
 }
 
 /**
+ * Plan-capacity bar (#8): placed points vs whole-plan capacity, with a muted
+ * unplaced-backlog annotation. The fill proportion is planned/capacity (clamped
+ * to 100%); the over/under tone comes straight from planBarData (pillState), so
+ * the bar can never disagree with the sprint pills. Pure view; dispatches nothing.
+ * @param {import("./store.js").PlanState} state
+ */
+export function renderPlanBar(state) {
+  const host = document.getElementById("plan-bar");
+  if (!host) return;
+  host.replaceChildren();
+  const { planned, capacity, backlogPoints, tone } = planBarData(state);
+
+  const track = document.createElement("div");
+  track.className = "plan-bar-track tone-" + tone;
+  const fill = document.createElement("div");
+  fill.className = "plan-bar-fill";
+  const pct = capacity > 0 ? Math.min(100, (planned / capacity) * 100) : 0;
+  fill.style.width = pct + "%";
+  track.appendChild(fill);
+
+  const label = document.createElement("span");
+  label.className = "plan-bar-label mono";
+  label.textContent = `${planned} / ${capacity} pts`;
+
+  const backlog = document.createElement("span");
+  backlog.className = "plan-bar-backlog micro";
+  backlog.textContent = `${backlogPoints} in backlog`;
+
+  host.append(track, label, backlog);
+}
+
+/**
  * Full render pass.
  * @param {import("./store.js").PlanState} state
  */
 export function render(state) {
   renderSettingsStrip(state);
   renderTitle(state);
+  renderPlanBar(state);
   renderBoard(state);
   renderBacklog(state);
 }

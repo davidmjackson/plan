@@ -30,7 +30,7 @@ export const NO_EPIC = "__none__";
  * @param {{ id: string, title: string, colourKey: string } | null} [epic]
  * @param {Array<{ label: string, violation: boolean }>} [badges]  shared D badges (Brief 7)
  */
-export function storyCard(story, epic, badges = []) {
+export function storyCard(story, epic, badges = [], placed = false) {
   const row = el("div", "bl-story");
   row.dataset.act = "edit-story";
   row.dataset.story = story.id;
@@ -51,6 +51,20 @@ export function storyCard(story, epic, badges = []) {
     row.append(el("span", "dep-badge mono" + (badge.violation ? " dep-badge--violation" : ""), badge.label));
   }
   if (badges.some((b) => b.violation)) row.classList.add("bl-story--dep-violation");
+  // phase2-build3 #9: one-click return-to-backlog, on PLACED (board) cards only.
+  // The explicit `placed` flag (not epic-presence, which is unreliable — a No-epic
+  // placed card has epic=null too) keeps backlog renders unchanged. Carries its
+  // own data-act so the board listener routes it to MOVE_STORY, not edit-story;
+  // drag.js excludes it as a drag handle so grabbing it never starts a drag.
+  if (placed) {
+    const ret = el("button", "bl-story-return", "↩");
+    ret.setAttribute("type", "button");
+    ret.dataset.act = "return-to-backlog";
+    ret.dataset.story = story.id;
+    ret.setAttribute("aria-label", "Return to backlog");
+    ret.title = "Return to backlog";
+    row.append(ret);
+  }
   return row;
 }
 

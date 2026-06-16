@@ -33,7 +33,9 @@
    accent on hover and focus (G4: plum is the app identity). No capacity colours
    here — amber/red mean capacity and nothing else. */
 .tbacts #tb-export:hover,
-.tbacts #tb-import:hover {
+.tbacts #tb-import:hover,
+.tbacts #tb-demo:hover,
+.tbacts #tb-clear:hover {
   border-color: var(--plum);
   color: var(--plum);
 }
@@ -1081,4 +1083,106 @@
 }
 .presence-chip.is-guest .presence-initial {
   background: #999;
+}
+
+/* === phase2-build3 ======================================================== */
+
+/* --- #8 plan-capacity bar: whole-plan placed vs capacity ------------------
+   A slim band under the settings strip. The fill proportion is placed/capacity;
+   the track tone reuses the pill's neutral/amber/red treatment (the tone class
+   comes from planBarData → pillState, so the bar can never disagree with the
+   sprint pills). Plum stays the interaction accent; amber/red stay reserved for
+   capacity semantics — the fill is a calm neutral until the plan goes over. */
+.plan-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 40px;
+  border-bottom: 1px solid var(--line2);
+  background: var(--panel);
+}
+
+.plan-bar-track {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--bone);
+  border: 1px solid var(--line2);
+  overflow: hidden;
+}
+
+.plan-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--soft);
+  transition: width 120ms ease;
+}
+
+.plan-bar-track.tone-amber {
+  background: var(--amberwash);
+}
+.plan-bar-track.tone-amber .plan-bar-fill {
+  background: oklch(0.5 0.12 60);
+}
+
+.plan-bar-track.tone-red {
+  background: var(--redwash);
+}
+.plan-bar-track.tone-red .plan-bar-fill {
+  background: var(--red);
+}
+
+.plan-bar-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.plan-bar-track.tone-amber ~ .plan-bar-label {
+  color: oklch(0.5 0.12 60);
+}
+.plan-bar-track.tone-red ~ .plan-bar-label {
+  color: var(--red);
+}
+
+.plan-bar-backlog {
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+/* --- #9 return-to-backlog control: placed cards only ----------------------
+   Quiet by default, revealed on card hover or keyboard focus. Plum on hover —
+   the interaction accent (never capacity colours). drag.js excludes it as a
+   drag handle, so grabbing it never starts a drag. */
+.bl-story-return {
+  margin-left: 4px;
+  padding: 0 5px;
+  border: none;
+  background: none;
+  color: var(--soft);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 100ms ease, color 100ms ease, background 100ms ease;
+}
+.bl-story:hover .bl-story-return,
+.bl-story-return:focus-visible {
+  opacity: 1;
+}
+.bl-story-return:hover {
+  color: var(--plum);
+  background: var(--plumwash);
+}
+
+/* --- #7 confirm dialog message (reuses the .modal shell) ------------------ */
+.modal-message {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
 }
