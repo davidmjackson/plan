@@ -1,3 +1,5 @@
+> **Correction (16 Jun 2026, post-build):** the shared `storyCard` renderer lives in `public/js/backlog.js`, NOT `render.js` as the "Read first" and Files lists below state. The chip + toggle shipped in `backlog.js`; `render.js` needed no change. The reducer also guards an unknown id (`if (!(id in state.stories)) return state`) beyond the literal snippet below, so a stretch mark on an unknown id is a safe no-op rather than a phantom story. See `build-log.md` (2026-06-16) and `build-state-after-phase2-build6.md`. The brief is otherwise source-accurate.
+
 BRIEF phase2-build6: story-level "stretch" toggle (P1)
 
 Sixth post-launch build, the second net-new direction since the UAT backlog cleared
