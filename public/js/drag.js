@@ -44,11 +44,13 @@ export function setupDrag(store) {
   const containers = Array.from(document.querySelectorAll("[data-drop]"));
   const d = dragula(containers, {
     // Only story cards are draggable (not the "+ Story" button or the empty
-    // "Drop stories here" text). The #9 return control lives inside a card, so
-    // exclude it as a handle — grabbing it must never start a drag (3c-R3).
+    // "Drop stories here" text). The #9 return control and the build6 stretch
+    // toggle live inside a card, so exclude them as handles — grabbing either must
+    // never start a drag (3c-R3 / build6-R4).
     moves: (/** @type {HTMLElement} */ el, /** @type {HTMLElement} */ _source, /** @type {HTMLElement} */ handle) =>
       !!el && el.dataset && el.dataset.story != null &&
-      !(handle && typeof handle.closest === "function" && handle.closest('[data-act="return-to-backlog"]')),
+      !(handle && typeof handle.closest === "function" &&
+        handle.closest('[data-act="return-to-backlog"], [data-act="toggle-stretch"]')),
     // A sprint accepts any card; a backlog group accepts only its own epic's
     // cards, so a drag can never change a story's epicId (editor-only contract).
     accepts: (/** @type {HTMLElement} */ el, /** @type {HTMLElement} */ target) => {

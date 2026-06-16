@@ -21,6 +21,7 @@ import {
   loadPlan,
   newPlan,
   moveStory,
+  setStoryStretch,
 } from "./actions.js";
 import { nextMonday } from "./date.js";
 import { validatePlan, migratePlan, exportPlan, extractPlan } from "./plan-io.js";
@@ -406,6 +407,15 @@ boardEl?.addEventListener("click", (e) => {
       // empty); only a settings-regeneration return toasts.
       if (target.dataset.story) {
         store.dispatch(moveStory({ storyId: target.dataset.story, target: { kind: "backlog" }, beforeId: null }));
+      }
+      break;
+    case "toggle-stretch":
+      // #build6: flip the stretch flag on a placed card. An explicit boolean read
+      // from the latest state (LWW-clean in a room). A real action — works in both
+      // local and room mode, unlike the build5 cursor side-channel.
+      if (target.dataset.story) {
+        const cur = store.getState().stories[target.dataset.story]?.stretch ?? false;
+        store.dispatch(setStoryStretch({ id: target.dataset.story, stretch: !cur }));
       }
       break;
   }

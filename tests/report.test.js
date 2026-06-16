@@ -107,6 +107,7 @@ test("reportModel overCommitment lists exactly the over sprints", () => {
     placed: 21,
     capacity: 18,
     overBy: 3,
+    stretchPoints: 0, // phase2-build6: no story marked stretch in this fixture
   });
 });
 
@@ -215,6 +216,59 @@ test("toCsv RFC-4180 quotes a comma/quote/newline field; the embedded newline do
   assert.ok(csv.includes('"A|B *C* `D` <E> & ""F"", G"'), "title field RFC-4180 quoted");
   // summary: comma + quote + NEWLINE, wrapped, inner quotes doubled, newline kept inside
   assert.ok(csv.includes('"sum, line1\nline2 ""q"""'), "multiline summary field quoted intact");
+});
+
+// --- phase2-build6: the stretch dimension (R6) -----------------------------
+// Mark Signup (s2, 13 pts, placed in the over sprint 0) a stretch goal.
+function stretchFixture() {
+  return reduce(fixture(), { type: A.SET_STORY_STRETCH, payload: { id: "s2", stretch: true } });
+}
+
+test("reportModel: storyRow.stretch reflects the story; overCommitment carries stretchPoints, overBy stays full", () => {
+  const m = reportModel(stretchFixture());
+  const s0 = m.sprints[0];
+  const signup = s0.stories.find((x) => x.title === "Signup");
+  const login = s0.stories.find((x) => x.title === "Login");
+  assert.equal(signup.stretch, true);
+  assert.equal(login.stretch, false); // absent reads false
+  // the over-commitment entry: full overage, annotated with the stretch points
+  assert.equal(m.overCommitment[0].overBy, 3, "overBy stays the FULL overage");
+  assert.equal(m.overCommitment[0].stretchPoints, 13, "stretchPoints = placed stretch points");
+});
+
+test("reportModel: with no stretch, every storyRow.stretch is false and stretchPoints is 0", () => {
+  const m = reportModel(fixture());
+  for (const sp of m.sprints) for (const st of sp.stories) assert.equal(st.stretch, false);
+  assert.equal(m.overCommitment[0].stretchPoints, 0);
+});
+
+test("toCsv: a stretch column — placed stretch 'yes', non-stretch blank, backlog blank", () => {
+  const csv = toCsv(reportModel(stretchFixture()));
+  const lines = csv.split("\n");
+  assert.match(lines[0], /stretch/i, "header has a stretch column");
+  const cols = lines[0].split(",");
+  const idx = cols.findIndex((c) => /stretch/i.test(c));
+  const row = (title) => lines.find((l) => l.includes(title)).split(",");
+  assert.equal(row("Signup")[idx], "yes", "placed stretch story reads yes");
+  assert.equal(row("Login")[idx], "", "placed non-stretch story is blank");
+  assert.equal(row("Research")[idx], "", "a backlog row is blank in the stretch column");
+});
+
+test("toMarkdown/toHtml: an over sprint shows the full overage AND the stretch split; stretch rows are marked", () => {
+  const m = reportModel(stretchFixture());
+  const md = toMarkdown(m);
+  assert.match(md, /over by 3/, "the full overage is on record");
+  assert.match(md, /13 pts marked stretch/i, "the stretch split is annotated");
+  assert.match(md, /Signup.*stretch/i, "the stretch story is marked in the per-sprint listing");
+
+  const html = toHtml(m);
+  assert.match(html, /over by 3/);
+  assert.match(html, /13 pts marked stretch/i);
+});
+
+test("toMarkdown: a plan with no stretch reads exactly as today (no spurious stretch annotation)", () => {
+  const md = toMarkdown(reportModel(fixture()));
+  assert.ok(!/stretch/i.test(md), "no stretch wording anywhere when nothing is marked");
 });
 
 // --- Case 10: NO MUTATION AT THE PURE LAYER (R2 at its cheapest) ------------

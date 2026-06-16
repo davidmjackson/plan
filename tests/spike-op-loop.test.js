@@ -227,3 +227,20 @@ test("SET_PLAN_TITLE is allowed: it updates the room name and the doc stays vali
     assert.equal(validatePlan(reloaded).ok, true);
   } finally { cleanup(); }
 });
+
+// phase2-build6: SET_STORY_STRETCH is allow-listed (the set is now 11 ops). It is
+// a whole-payload server-DATA op — applied via the existing reducer + validatePlan,
+// committed, and broadcast — that records stretch intent without touching capacity.
+test("SET_STORY_STRETCH is allowed: it sets the flag, the doc stays valid, the version bumps", () => {
+  const { db, cleanup } = freshDb();
+  try {
+    const room = seedRoom(db, seedDoc([addStory("S1")]));
+    const v0 = room.version;
+    const r = applyOp(db, room, { type: "SET_STORY_STRETCH", payload: { id: "S1", stretch: true }, baseVersion: v0 });
+    assert.equal(r.ok, true);
+    assert.equal(r.version, v0 + 1, "the op committed and bumped the version");
+    const reloaded = loadRoom(db, "acme-q3").doc;
+    assert.equal(reloaded.stories.S1.stretch, true);
+    assert.equal(validatePlan(reloaded).ok, true);
+  } finally { cleanup(); }
+});

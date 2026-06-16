@@ -20,10 +20,10 @@ import { isViolation, locationLabel, depLabel, storyLocation } from "./dep-selec
 
 /**
  * @typedef {import("./store.js").PlanState} PlanState
- * @typedef {{ title: string, summary: string, points: number, epicTitle: string | null, inViolation: boolean }} StoryRow
+ * @typedef {{ title: string, summary: string, points: number, epicTitle: string | null, inViolation: boolean, stretch: boolean }} StoryRow
  * @typedef {{ name: string, startDate: string, endDate: string, isPartial: boolean,
  *   capacity: number, placed: number, pillState: "neutral"|"amber"|"red", overBy: number,
- *   stories: StoryRow[] }} SprintBlock
+ *   stretchPoints: number, stories: StoryRow[] }} SprintBlock
  */
 
 /**
@@ -35,7 +35,7 @@ import { isViolation, locationLabel, depLabel, storyLocation } from "./dep-selec
  *     startDate: string, endDate: string, totalPlacedPoints: number, totalCapacity: number },
  *   sprints: SprintBlock[],
  *   backlog: StoryRow[],
- *   overCommitment: Array<{ name: string, placed: number, capacity: number, overBy: number }>,
+ *   overCommitment: Array<{ name: string, placed: number, capacity: number, overBy: number, stretchPoints: number }>,
  *   warnings: Array<{ label: string, blockerTitle: string, blockerSprint: string | null,
  *     blockedTitle: string, blockedSprint: string | null }>,
  * }}
@@ -64,6 +64,7 @@ export function reportModel(state) {
       points: st.points,
       epicTitle: epicTitle(st.epicId),
       inViolation: violatingIds.has(id),
+      stretch: st.stretch ?? false, // phase2-build6: per-story truth; absent = false
     };
   };
 
@@ -71,6 +72,12 @@ export function reportModel(state) {
   const sprintBlocks = sprints.map((sp, i) => {
     const placed = sprintPlacedPoints(state, i);
     const capacity = sprintCapacity(sp, settings);
+    // phase2-build6: stretch points are a SUBSET annotation of the placed total —
+    // stretch stories stay counted in full, so this never reduces `placed`.
+    const stretchPoints = sp.placedStoryIds.reduce(
+      (sum, id) => sum + (stories[id]?.stretch ? stories[id].points : 0),
+      0,
+    );
     return {
       name: sp.name,
       startDate: sp.startDate,
@@ -80,6 +87,7 @@ export function reportModel(state) {
       placed,
       pillState: pillState(placed, capacity),
       overBy: overBy(placed, capacity),
+      stretchPoints,
       stories: sp.placedStoryIds.map(storyRow),
     };
   });
@@ -99,7 +107,7 @@ export function reportModel(state) {
 
   const overCommitment = sprintBlocks
     .filter((b) => b.overBy > 0)
-    .map((b) => ({ name: b.name, placed: b.placed, capacity: b.capacity, overBy: b.overBy }));
+    .map((b) => ({ name: b.name, placed: b.placed, capacity: b.capacity, overBy: b.overBy, stretchPoints: b.stretchPoints }));
 
   const warnings = deps
     .filter((d) => isViolation(state, d))
@@ -161,14 +169,23 @@ export function toMarkdown(model) {
     out.push(`Capacity ${sp.capacity} · placed ${sp.placed} · ${sp.pillState}`);
     if (sp.stories.length) {
       out.push("", "| Story | Points |", "| --- | ---: |");
-      for (const st of sp.stories) out.push(`| ${mdEscape(st.title)} | ${st.points} |`);
+      // phase2-build6: a stretch story is marked in the listing; non-stretch rows
+      // render exactly as before (no spurious annotation when nothing is marked).
+      for (const st of sp.stories) {
+        out.push(`| ${mdEscape(st.title)}${st.stretch ? " (stretch)" : ""} | ${st.points} |`);
+      }
     }
     out.push("");
   }
 
   out.push("## Over-commitment");
   if (overCommitment.length) {
-    for (const o of overCommitment) out.push(`- ${mdEscape(o.name)}: ${o.placed}/${o.capacity} pts, over by ${o.overBy}`);
+    // phase2-build6: the FULL overage stays on record; the stretch split is an
+    // annotation (only when some of the overage is marked stretch).
+    for (const o of overCommitment) {
+      const split = o.stretchPoints > 0 ? `, of which ${o.stretchPoints} pts marked stretch` : "";
+      out.push(`- ${mdEscape(o.name)}: ${o.placed}/${o.capacity} pts, over by ${o.overBy}${split}`);
+    }
   } else {
     out.push("No sprint is over capacity.");
   }
@@ -204,7 +221,7 @@ export function toHtml(model) {
   const sections = sprints
     .map((sp) => {
       const body = sp.stories
-        .map((st) => `<tr><td>${h(st.title)}</td><td class="num">${st.points}</td></tr>`)
+        .map((st) => `<tr><td>${h(st.title)}${st.stretch ? " (stretch)" : ""}</td><td class="num">${st.points}</td></tr>`)
         .join("");
       const table = sp.stories.length
         ? `<table><thead><tr><th>Story</th><th class="num">Points</th></tr></thead><tbody>${body}</tbody></table>`
@@ -220,7 +237,10 @@ export function toHtml(model) {
 
   const over = overCommitment.length
     ? `<ul>${overCommitment
-        .map((o) => `<li>${h(o.name)}: ${o.placed}/${o.capacity} pts, over by ${o.overBy}</li>`)
+        .map((o) => {
+          const split = o.stretchPoints > 0 ? `, of which ${o.stretchPoints} pts marked stretch` : "";
+          return `<li>${h(o.name)}: ${o.placed}/${o.capacity} pts, over by ${o.overBy}${split}</li>`;
+        })
         .join("")}</ul>`
     : `<p>No sprint is over capacity.</p>`;
 
@@ -274,7 +294,7 @@ export function toCsv(model) {
   const { sprints, backlog } = model;
   /** @type {Array<Array<string | number>>} */
   const rows = [
-    ["epic", "story", "summary", "points", "sprint", "sprint capacity", "sprint status", "dependency"],
+    ["epic", "story", "summary", "points", "sprint", "sprint capacity", "sprint status", "dependency", "stretch"],
   ];
   for (const sp of sprints) {
     for (const st of sp.stories) {
@@ -287,11 +307,14 @@ export function toCsv(model) {
         sp.capacity,
         sp.pillState,
         st.inViolation ? "yes" : "",
+        st.stretch ? "yes" : "", // phase2-build6: per-story stretch truth
       ]);
     }
   }
+  // Backlog rows are blank in the stretch column: stretch is a placed-only report
+  // concept even though the flag persists in data if a story is moved back (R4/R6).
   for (const st of backlog) {
-    rows.push([st.epicTitle ?? "", st.title, st.summary, st.points, "Backlog", "", "", st.inViolation ? "yes" : ""]);
+    rows.push([st.epicTitle ?? "", st.title, st.summary, st.points, "Backlog", "", "", st.inViolation ? "yes" : "", ""]);
   }
   return rows.map((r) => r.map(csvField).join(",")).join("\n");
 }

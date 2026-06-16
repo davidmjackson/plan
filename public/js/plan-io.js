@@ -12,8 +12,9 @@
 
 import { isValidPoints } from "./validate.js";
 
-/** The schema version this build understands. Brief 7: v2 adds the deps field. */
-const CURRENT_SCHEMA = 2;
+/** The schema version this build understands. Brief 7: v2 adds the deps field.
+ * phase2-build6: v3 adds the optional story `stretch` flag. */
+const CURRENT_SCHEMA = 3;
 
 /** @param {any} v @returns {boolean} a plain (non-array) object */
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -94,10 +95,10 @@ export function validatePlan(plan) {
 }
 
 /**
- * Version-dispatch migration seam (Brief 5 R4). Only schemaVersion 1 exists, so
- * the loop is a no-op today; Brief 7 adds migrators[1] = v1->v2 and bumps
- * CURRENT_SCHEMA, additively. A missing/invalid version, or one NEWER than this
- * build, fails clearly — it never silently loads.
+ * Version-dispatch migration seam (Brief 5 R4): walk a plan up one version at a
+ * time via MIGRATORS until it reaches CURRENT_SCHEMA. migrators[1] = v1->v2 (deps)
+ * and migrators[2] = v2->v3 (stretch) run for older saves. A missing/invalid
+ * version, or one NEWER than this build, fails clearly — it never silently loads.
  * @param {any} plan
  * @returns {{ ok: true, plan: any } | { ok: false, reason: string }}
  */
@@ -105,7 +106,6 @@ export function migratePlan(plan) {
   const v = plan && plan.meta ? plan.meta.schemaVersion : undefined;
   if (!Number.isInteger(v)) return { ok: false, reason: "missing or invalid schema version" };
   if (v > CURRENT_SCHEMA) return { ok: false, reason: "saved by a newer version of sprintplan" };
-  // Seam: Brief 7 adds migrators[1] = v1->v2 and bumps CURRENT_SCHEMA. No-op today.
   let migrated = plan;
   for (let from = v; from < CURRENT_SCHEMA; from++) migrated = MIGRATORS[from](migrated);
   return { ok: true, plan: migrated };
@@ -113,11 +113,14 @@ export function migratePlan(plan) {
 
 /**
  * Version-keyed migrators: migrators[n] upgrades a v(n) plan to v(n+1). Additive
- * only, never deletes. v1->v2 (Brief 7) backfills the empty deps field and stamps
- * the new version so a re-export carries it.
+ * only, never deletes. v1->v2 (Brief 7) backfills the empty deps field; v2->v3
+ * (phase2-build6) is a version bump only — `stretch` is optional and absent reads
+ * as false, so there is no per-story backfill. Each stamps the new version so a
+ * re-export carries it.
  */
 const MIGRATORS = /** @type {Record<number, (plan: any) => any>} */ ({
   1: (plan) => ({ ...plan, deps: [], meta: { ...plan.meta, schemaVersion: 2 } }),
+  2: (plan) => ({ ...plan, meta: { ...plan.meta, schemaVersion: 3 } }),
 });
 
 /**

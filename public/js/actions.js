@@ -29,6 +29,9 @@ export const ActionTypes = Object.freeze({
   // Brief 7 — dependencies (one directed pair, created/removed in the card editor)
   LINK_DEP: "LINK_DEP",
   UNLINK_DEP: "UNLINK_DEP",
+  // phase2-build6 — mark a placed story a stretch goal (records intent; never
+  // discounts capacity). An explicit boolean, so concurrent room edits are LWW-clean.
+  SET_STORY_STRETCH: "SET_STORY_STRETCH",
 });
 
 /** @param {string} date */
@@ -83,3 +86,9 @@ export const linkDep = ({ blockerId, blockedId }) =>
   ({ type: ActionTypes.LINK_DEP, payload: { id: newId("dep"), blockerId, blockedId } });
 /** @param {{ id: string }} payload */
 export const unlinkDep = (payload) => ({ type: ActionTypes.UNLINK_DEP, payload });
+
+// --- phase2-build6: stretch toggle. A whole-payload { id, stretch } explicit
+// boolean (not a flip), so two concurrent room edits resolve last-write-wins. ---
+
+/** @param {{ id: string, stretch: boolean }} payload */
+export const setStoryStretch = (payload) => ({ type: ActionTypes.SET_STORY_STRETCH, payload });
