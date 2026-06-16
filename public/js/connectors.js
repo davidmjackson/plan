@@ -135,23 +135,35 @@ function cardRect(/** @type {HTMLElement} */ board, /** @type {string} */ storyI
   return { right: r.right - boardRect.left, midY: (r.top + r.bottom) / 2 - boardRect.top };
 }
 
-/** A right-bowed cubic from the blocker's right edge to the blocked's right edge.
- * The arrowhead sits at the path end (the blocked/dependent card). */
+/** A right-bowed cubic running from the blocked (dependent) card to the blocker
+ * (depended-on) card. The arrowhead sits at the path END — the blocker — so it
+ * points AT the story this one depends on (phase2-build2; reversed from Brief 8,
+ * which placed it at the dependent end). The end control point is offset
+ * VERTICALLY toward the blocked card rather than flat to the right, so the head's
+ * tangent follows the real blocker↔blocked axis and drives INTO the blocker card
+ * instead of lying flat along its right edge. */
 function curvePath(
-  /** @type {{right:number,midY:number}} */ from,
-  /** @type {{right:number,midY:number}} */ to,
+  /** @type {{right:number,midY:number}} */ blocker,
+  /** @type {{right:number,midY:number}} */ blocked,
   /** @type {number} */ bow,
   /** @type {number} */ maxX,
   /** @type {string} */ className,
 ) {
-  const x1 = from.right;
-  const y1 = from.midY;
-  const x2 = to.right;
-  const y2 = to.midY;
-  const c1 = Math.min(x1 + bow, maxX);
-  const c2 = Math.min(x2 + bow, maxX);
+  // Tail leaves the blocked (dependent) card's right edge; the head arrives at
+  // the blocker's right edge carrying the marker.
+  const x1 = blocked.right;
+  const y1 = blocked.midY;
+  const x2 = blocker.right;
+  const y2 = blocker.midY;
+  const c1 = Math.min(x1 + bow, maxX); // start control: bow into the right gutter
+  const c2x = Math.min(x2 + bow, maxX);
+  // End control sits beside the head but offset toward the blocked card, so the
+  // final tangent (head − control) tilts along the blocker↔blocked axis and the
+  // arrow drives into the blocker rather than flatly along its edge.
+  const dirY = Math.sign(y1 - y2) || 1;
+  const c2y = y2 + dirY * bow;
   const path = document.createElementNS(SVG_NS, "path");
-  path.setAttribute("d", `M ${x1} ${y1} C ${c1} ${y1}, ${c2} ${y2}, ${x2} ${y2}`);
+  path.setAttribute("d", `M ${x1} ${y1} C ${c1} ${y1}, ${c2x} ${c2y}, ${x2} ${y2}`);
   path.setAttribute("class", className);
   path.setAttribute("marker-end", "url(#dep-arrow)");
   return path;
@@ -188,15 +200,15 @@ function paint() {
     if (c.kind === "connector" && c.blockerId !== hoveredStoryId && c.blockedId !== hoveredStoryId) {
       continue;
     }
-    const from = cardRect(board, c.blockerId, boardRect);
-    const to = cardRect(board, c.blockedId, boardRect);
-    if (!from || !to) continue;
+    const blocker = cardRect(board, c.blockerId, boardRect);
+    const blocked = cardRect(board, c.blockedId, boardRect);
+    if (!blocker || !blocked) continue;
 
     if (c.kind === "tether") {
-      nodes.push(curvePath(from, to, TETHER_BOW, maxX, "dep-line dep-tether"));
+      nodes.push(curvePath(blocker, blocked, TETHER_BOW, maxX, "dep-line dep-tether"));
     } else {
       const cls = c.violation ? "dep-line dep-connector dep-line--violation" : "dep-line dep-connector";
-      nodes.push(curvePath(from, to, CONNECTOR_BOW, maxX, cls));
+      nodes.push(curvePath(blocker, blocked, CONNECTOR_BOW, maxX, cls));
     }
   }
   svg.replaceChildren(...nodes);
