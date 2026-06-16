@@ -212,3 +212,18 @@ test("vocabulary guard: an excluded op type is rejected, never applied", () => {
     assert.equal(validatePlan(loadRoom(db, "acme-q3").doc).ok, true);
   } finally { cleanup(); }
 });
+
+// phase2-build4 #10: SET_PLAN_TITLE is allow-listed so the room name (= plan
+// title) can be edited and broadcast live. The first op-loop vocabulary addition
+// in the Phase 2 arc (a deliberate, director-ruled trade for an editable room name).
+test("SET_PLAN_TITLE is allowed: it updates the room name and the doc stays valid", () => {
+  const { db, cleanup } = freshDb();
+  try {
+    const room = seedRoom(db, seedDoc([addStory("S1")]));
+    const r = applyOp(db, room, { type: "SET_PLAN_TITLE", payload: "Q3 Planning Room", baseVersion: room.version });
+    assert.equal(r.ok, true);
+    const reloaded = loadRoom(db, "acme-q3").doc;
+    assert.equal(reloaded.meta.title, "Q3 Planning Room");
+    assert.equal(validatePlan(reloaded).ok, true);
+  } finally { cleanup(); }
+});

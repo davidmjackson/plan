@@ -25,6 +25,8 @@ const ALLOWED = new Set([
   "ADD_EPIC", "EDIT_EPIC", "DELETE_EPIC",
   "ADD_STORY", "EDIT_STORY", "DELETE_STORY", "MOVE_STORY",
   "LINK_DEP", "UNLINK_DEP",
+  // phase2-build4 #10: the room name IS the plan title, edited live in a room.
+  "SET_PLAN_TITLE",
 ]);
 
 /** @typedef {{ ok: true, version: number, op: { type: string, payload: any } } | { ok: false, reason: string }} OpResult */

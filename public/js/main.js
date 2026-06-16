@@ -405,15 +405,13 @@ if (collabBtn) {
 }
 
 // #10: in a room, give the board a live-room header treatment — the band eyebrow
-// reads as a live room, the plan title BECOMES the room name (so it is made
-// read-only, P5: SET_PLAN_TITLE is not room-allow-listed and would nack), and a
-// LIVE indicator + participant count (kept in step by renderPresence) appears.
-// Local mode shows none of it (R3).
+// reads as a live room, the plan title BECOMES the room name (editable and synced
+// live: SET_PLAN_TITLE is now room-allow-listed, P5 reversed on the director's
+// call), and a LIVE indicator + participant count (kept in step by renderPresence)
+// appears. Local mode shows none of it (R3).
 if (IN_ROOM) {
   const eyebrow = document.querySelector(".band .eyebrow");
   if (eyebrow) eyebrow.textContent = "Live room";
-  const title = document.getElementById("plan-title");
-  if (title) title.setAttribute("contenteditable", "false");
   const live = document.getElementById("room-live");
   if (live) live.hidden = false;
 }
