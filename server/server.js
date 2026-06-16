@@ -63,10 +63,11 @@ export function decideUpgrade(room, session, token) {
  *   serveStatic?: boolean,
  *   seedRoom?: { id: string, companyId: string, shareToken: string, mode: string } | null,
  *   auth?: any,
+ *   host?: string,
  * }} opts
  * @returns {Promise<{ url: string, httpUrl: string, close: () => void }>}
  */
-export async function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom = null, auth = null }) {
+export async function startSpikeServer({ db, port = 0, serveStatic = false, seedRoom = null, auth = null, host = "127.0.0.1" }) {
   const provider = auth ?? (await createAuthProvider(process.env));
 
   if (seedRoom && !loadRoom(db, seedRoom.id)) {
@@ -194,11 +195,12 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
   });
 
   return new Promise((resolve) => {
-    httpServer.listen(port, "127.0.0.1", () => {
+    httpServer.listen(port, host, () => {
       const addr = /** @type {import("node:net").AddressInfo} */ (httpServer.address());
+      const reachHost = host === "0.0.0.0" ? "localhost" : host;
       resolve({
-        url: `ws://127.0.0.1:${addr.port}`,
-        httpUrl: `http://127.0.0.1:${addr.port}`,
+        url: `ws://${reachHost}:${addr.port}`,
+        httpUrl: `http://${reachHost}:${addr.port}`,
         close: () => { wss.close(); httpServer.close(); },
       });
     });

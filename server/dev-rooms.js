@@ -17,6 +17,9 @@ const server = await startSpikeServer({
   db,
   port: 3014,
   serveStatic: true,
+  // Bind all interfaces so a Windows browser can reach the WSL2 dev server
+  // (a 127.0.0.1 bind is loopback-only and not forwarded across the WSL boundary).
+  host: "0.0.0.0",
   seedRoom: { id: "demo", companyId: "acme", shareToken: "demo", mode: "open-link" },
 });
 console.log(`DEV rooms+static on ${server.httpUrl}`);
