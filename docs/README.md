@@ -17,7 +17,7 @@ real doc/code drift on this project more than once.
 - `aide-rules-of-engagement.md` — the RoE cadence every brief follows (PROPOSE before build, TDD, branch-per-brief, build-log sign-off).
 
 **Current state and running record**
-- `build-state-after-brief10.md` — the most recent build-state handoff (the MVP P0 close-out); the latest comprehensive map of the code. NOTE: it predates the live multiplayer wiring, so where it and the source disagree, the source wins.
+- `build-state-after-phase2-build5.md` — the most recent build-state handoff (live cursors + coloured avatars); the latest comprehensive map of the code. Where it and the source disagree, the source wins.
 - `build-log.md` — the running, append-only build log (the Capstone artefact). New entries are appended here; it is never archived.
 
 **Operational / standing decisions**
@@ -26,7 +26,7 @@ real doc/code drift on this project more than once.
 - `housekeeping-dragula-vendoring.md` — the standing decision to keep per-app dragula copies.
 
 **Active work (new naming convention)**
-- `phase2-buildN.md` — the current phase-2 build briefs (defect fixes and enhancements from the UAT session), numbered and incrementing. `phase2-build1.md` is the dependency-in-a-room defect fix. New build briefs are added here as `phase2-build2.md`, `phase2-build3.md`, and so on.
+- `phase2-buildN.md` — the current phase-2 build brief, numbered and incrementing. Only the latest brief stays live here (paired with the latest build-state); shipped briefs move to `docs/archive/`. The live brief is currently `phase2-build5.md` (live cursors + coloured avatars).
 
 ## Archive (`docs/archive/`)
 
@@ -37,6 +37,7 @@ references and for project history; **not** current working docs.
 - `build-state-after-brief1.md` … `build-state-after-brief9.md` — superseded build-state snapshots, each the ground-truth handoff for one brief, all superseded by `build-state-after-brief10.md`.
 - `phase2-multiplayer-feasibility.md`, `phase2-multiplayer-spike-brief.md`, `phase2-multiplayer-spike-build-brief.md`, `phase2-multiplayer-spike-propose.md`, `phase2-multiplayer-spike-finding.md` — the multiplayer feasibility study and spike exploration that produced the GO decision.
 - `phase2-mp1-client-sync-brief.md`, `phase2-mp2-company-auth-brief.md`, `phase2-mp2-hub-registration.md`, `phase2-mp3-conflict-refine-brief.md`, `phase2-mp4-collab-bridge-brief.md`, `phase2-mp5-presence-brief.md`, `phase2-mp6-deploy-brief.md` — the per-slice multiplayer productionise briefs (MP1–MP6). All shipped; the live source is the truth. (The MP6 deploy **runbook** stays live in `docs/` as an operational doc.)
+- `phase2-build1.md` … `phase2-build4.md` (and `phase2-build2-pr27-commit-runbook.md`) — the post-launch build briefs (build1 dependency-in-a-room fix, build2 connector arrowhead, build3 demo/clear+capacity bar+return-to-backlog, build4 collaboration polish). All shipped and merged; the build-log + build-states are the current truth. Their per-build build-states (`build-state-after-phase2-build1..4.md`) are archived alongside.
 
 ## Conventions going forward
 
