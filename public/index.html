@@ -33,6 +33,10 @@
         <button type="button" class="btn btn-ghost btn-sm" id="tb-export">Download board</button>
         <button type="button" class="btn btn-ghost btn-sm" id="tb-import">Import board</button>
         <input type="file" id="board-file" accept="application/json,.json" hidden />
+        <!-- phase2-build3 #7: one-click demo/clear. Local-mode only — NEW_PLAN /
+             LOAD_PLAN are not room ops, so both hide in a room (wired in main.js). -->
+        <button type="button" class="btn btn-ghost btn-sm" id="tb-demo">Load demo</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="tb-clear">Clear plan</button>
         <span class="tbacts-sep" aria-hidden="true"></span>
         <!-- MP4: create a live shared room from this plan (requires an account;
              an unauthed create surfaces a sign-in toast). Hidden inside a room. -->
@@ -103,6 +107,10 @@
         <span class="ss-key micro">pts</span>
       </span>
     </section>
+
+    <!-- phase2-build3 #8: whole-plan capacity bar (placed pts vs plan capacity).
+         Pure derived view, rendered by renderPlanBar from planBarData. -->
+    <div class="plan-bar" id="plan-bar" aria-live="polite"></div>
 
     <div class="workspace">
       <main class="board" id="board"></main>

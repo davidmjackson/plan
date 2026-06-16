@@ -3,9 +3,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createInitialState, reduce } from "../public/js/store.js";
 import { ActionTypes, moveStory } from "../public/js/actions.js";
-import { sprintPlacedPoints, planSummary } from "../public/js/board-selectors.js";
+import { sprintPlacedPoints, planSummary, planCapacity, planBarData } from "../public/js/board-selectors.js";
 import { backlogGroups, epicSummary } from "../public/js/backlog-selectors.js";
-import { pillState } from "../public/js/plan-maths.js";
+import { pillState, adjustedCapacity } from "../public/js/plan-maths.js";
 import { setDurationMonths } from "../public/js/actions.js";
 
 const A = ActionTypes;
@@ -114,4 +114,59 @@ test("planSummary keeps months (settings) distinct from sprints (generated) on a
   const sum = planSummary(s);
   assert.equal(sum.months, 1);
   assert.equal(sum.sprints, 3); // a 1-month/2-week plan generates 3 sprints
+});
+
+// --- phase2-build3 #8: plan-capacity bar selectors -------------------------
+// planCapacity sums sprintCapacity (prorating partials); planBarData is the
+// bar's derived view data, its over/under tone reused from pillState so the
+// bar can never disagree with the sprint pills (3b-R1/R2/R3).
+
+const SETTINGS = { startDate: "2026-07-06", durationMonths: 3, sprintWeeks: 2, velocity: 20, bufferPct: 10 };
+
+test("planCapacity sums sprint capacities; two full sprints at adjusted 18 = 36", () => {
+  const state = /** @type {any} */ ({ settings: SETTINGS, sprints: [{ days: 14, isPartial: false }, { days: 14, isPartial: false }], stories: {}, backlog: [] });
+  assert.equal(planCapacity(state), 36);
+});
+
+test("planCapacity prorates a partial final sprint (not the full 18)", () => {
+  const state = /** @type {any} */ ({ settings: SETTINGS, sprints: [{ days: 14, isPartial: false }, { days: 7, isPartial: true }], stories: {}, backlog: [] });
+  assert.equal(planCapacity(state), 27); // 18 + round(18*7/14)=9
+  assert.notEqual(planCapacity(state), 36); // would be 36 if the partial were counted full
+});
+
+test("planCapacity over a generated default plan prorates its partial final sprint", () => {
+  const s = createInitialState("2026-07-06");
+  assert.ok(s.sprints.some((sp) => sp.isPartial), "default 3-month plan should have a partial final sprint");
+  const adjusted = adjustedCapacity(20, 10); // 18
+  const n = s.sprints.length;
+  const cap = planCapacity(s);
+  assert.ok(cap < adjusted * n, "a partial final sprint makes the total less than all-full");
+  assert.ok(cap > adjusted * (n - 1), "the partial sprint still contributes (not dropped)");
+});
+
+test("planBarData.tone is pillState(planned, capacity) — neutral/amber/red track the pill", () => {
+  const mk = (p0, p1) => /** @type {any} */ ({
+    settings: SETTINGS,
+    sprints: [{ days: 14, placedStoryIds: ["a"] }, { days: 14, placedStoryIds: ["b"] }],
+    stories: { a: { points: p0 }, b: { points: p1 } },
+    backlog: [],
+  });
+  assert.equal(planBarData(mk(18, 18)).tone, "neutral"); // 36/36
+  assert.equal(planBarData(mk(20, 19)).tone, "amber"); // 39/36 = 8.3% over
+  assert.equal(planBarData(mk(20, 20)).tone, "red"); // 40/36 = 11.1% over
+  const d = planBarData(mk(20, 19));
+  assert.equal(d.planned, 39);
+  assert.equal(d.capacity, 36);
+  assert.equal(d.tone, pillState(d.planned, d.capacity)); // the invariant, stated directly
+});
+
+test("planBarData.backlogPoints sums unplaced backlog stories (the muted annotation)", () => {
+  const state = /** @type {any} */ ({
+    settings: SETTINGS,
+    sprints: [{ days: 14, placedStoryIds: ["a"] }],
+    stories: { a: { points: 8 }, b: { points: 5 }, c: { points: 3 } },
+    backlog: ["b", "c"],
+  });
+  assert.equal(planBarData(state).backlogPoints, 8); // 5 + 3; placed 'a' excluded
+  assert.equal(planBarData(state).planned, 8); // placed only
 });

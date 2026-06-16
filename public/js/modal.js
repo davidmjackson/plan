@@ -74,3 +74,32 @@ export function openModal({ heading, content, footer, isDirty, onClose }) {
 
   return { close, attemptClose, card };
 }
+
+/**
+ * A minimal confirm dialog over the modal shell (phase2-build3 #7). Cancel
+ * (ghost) dismisses; the primary button runs onConfirm then closes. Reuses the
+ * .modal-footer chrome. For a destructive confirm pass danger:true (red button,
+ * Cancel focused so an accidental Enter does not wipe work).
+ * @param {Object} opts
+ * @param {string} opts.heading
+ * @param {string} opts.message
+ * @param {string} opts.confirmLabel
+ * @param {boolean} [opts.danger]
+ * @param {() => void} opts.onConfirm
+ */
+export function confirmModal({ heading, message, confirmLabel, danger = false, onConfirm }) {
+  const content = el("p", "modal-message", message);
+  const footer = el("div", "modal-footer");
+  const right = el("div", "modal-footer-right");
+  const cancel = el("button", "btn btn-ghost", "Cancel");
+  const confirm = el("button", "btn " + (danger ? "btn-danger" : "btn-pri"), confirmLabel);
+  right.append(cancel, confirm);
+  footer.append(right);
+  const modal = openModal({ heading, content, footer });
+  cancel.addEventListener("click", () => modal.close());
+  confirm.addEventListener("click", () => {
+    modal.close();
+    onConfirm();
+  });
+  (danger ? cancel : confirm).focus();
+}

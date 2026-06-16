@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { createInitialState, reduce } from "../public/js/store.js";
 import { ActionTypes, moveStory } from "../public/js/actions.js";
 import { validatePlan, migratePlan, exportPlan, extractPlan } from "../public/js/plan-io.js";
+import { readFileSync } from "node:fs";
 
 const A = ActionTypes;
 const epic = (id, title) => ({ type: A.ADD_EPIC, payload: { id, title } });
@@ -261,4 +262,20 @@ test("extractPlan(restore): the { savedAt, plan } envelope yields the inner plan
   const result = extractPlan({ savedAt: "2026-06-12T10:00:00.000Z", plan: bare }, "restore");
   assert.equal(result.ok, true);
   assert.equal(result.plan, bare);
+});
+
+// --- phase2-build3 #7: the demo file passes the import load boundary ---------
+// The one-click "Load demo" button reuses the file-import pipeline verbatim
+// (extractPlan("file") -> migratePlan -> validatePlan) on the bundled sample.
+// A cheap regression tripwire: if the schema bumps and the sample is not
+// rebuilt, this goes red before the demo button ships a broken load.
+
+test("public/samples/sample-plan.json passes the file-import load boundary", () => {
+  const parsed = JSON.parse(readFileSync(new URL("../public/samples/sample-plan.json", import.meta.url), "utf8"));
+  const ext = extractPlan(parsed, "file");
+  assert.equal(ext.ok, true, ext.ok ? "" : ext.reason);
+  const mig = migratePlan(ext.plan);
+  assert.equal(mig.ok, true, mig.ok ? "" : mig.reason);
+  const val = validatePlan(mig.plan);
+  assert.equal(val.ok, true, val.ok ? "" : val.reason);
 });
