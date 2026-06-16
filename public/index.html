@@ -127,6 +127,13 @@
 
     <div class="toast" id="toast" role="status" hidden></div>
 
+    <!-- phase2-build5: live-cursor overlay (room mode only — main.js populates it
+         when IN_ROOM). A FIXED, full-viewport, pointer-events:none layer so it
+         never intercepts a board click or a dragula drop, and lives OUTSIDE #board
+         so render()'s replaceChildren never wipes it (R5). Inert + empty in local
+         mode. -->
+    <div class="cursor-layer" id="cursor-layer" aria-hidden="true"></div>
+
     <!-- dragula is a vendored global; load it before the modules so window.dragula
          exists when main.js wires the board (Brief 3). -->
     <script src="/vendor/dragula/dragula.min.js"></script>

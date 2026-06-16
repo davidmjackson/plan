@@ -26,6 +26,7 @@ import { createAuthProvider } from "./auth.js";
 import { createInitialState } from "../public/js/store.js";
 import { validatePlan } from "../public/js/plan-io.js";
 import { newId } from "../public/js/ids.js";
+import { PALETTE, paletteColour, pickColourIndex } from "../public/js/cursors.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -137,12 +138,22 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     const json = JSON.stringify(msg);
     for (const ws of sockets.get(id) ?? []) ws.send(json);
   };
+  // Fan out to everyone in the room EXCEPT the sender. Used by the ephemeral
+  // cursor relay (R1) so a client never receives its own cursor — nothing to
+  // filter client-side.
+  const broadcastExcept = (id, sender, msg) => {
+    const json = JSON.stringify(msg);
+    for (const ws of sockets.get(id) ?? []) if (ws !== sender) ws.send(json);
+  };
   // Presence (MP5): the room's current participants, server-derived from the
   // socket set, broadcast on join/leave. Per-connection; never plan state.
   const broadcastPresence = (id) => {
     const participants = [...(sockets.get(id) ?? [])].map((ws) => {
       const m = /** @type {any} */ (ws).meta;
-      return { id: m.id, name: m.name, identity: m.identity };
+      // colour (phase2-build5, R3): server-assigned at connection, carried here so
+      // a participant's avatar and their cursor read the ONE colour and match by
+      // construction. Pure presence — never plan state.
+      return { id: m.id, name: m.name, identity: m.identity, colour: m.colour };
     });
     broadcast(id, { type: "presence", participants });
   };
@@ -163,7 +174,16 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     }
 
     wss.handleUpgrade(req, socket, head, (ws) => {
-      /** @type {any} */ (ws).meta = { roomId, identity: decision.identity, name, session, id: newId("p") };
+      // colour (phase2-build5, R3): the lowest palette index not in use by a
+      // connected socket in this room, so a leaver's colour is reused before a new
+      // one and two participants never collide (below palette size). Computed
+      // BEFORE join() so the new socket isn't counted against itself.
+      const used = [...(sockets.get(roomId) ?? [])].map((s) => /** @type {any} */ (s).meta.colourIndex);
+      const colourIndex = pickColourIndex(used, PALETTE.length);
+      /** @type {any} */ (ws).meta = {
+        roomId, identity: decision.identity, name, session, id: newId("p"),
+        colourIndex, colour: paletteColour(colourIndex),
+      };
       join(roomId, ws);
       wss.emit("connection", ws, req);
     });
@@ -179,6 +199,22 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
     ws.on("message", (data) => {
       let msg;
       try { msg = JSON.parse(data.toString()); } catch { return; }
+
+      // Ephemeral cursor relay (phase2-build5, R1): a pure side-channel. Stamp the
+      // sender's stable id and fan out to the OTHER sockets only; NEVER applyOp,
+      // NEVER touch room.doc/room.version, NEVER commit. The relayed frame is
+      // RECONSTRUCTED from {id, x/y | gone} — never the raw client object — and a
+      // position with non-finite coords is dropped, not forwarded.
+      if (msg.type === "cursor") {
+        const id = /** @type {any} */ (ws).meta.id;
+        if (msg.gone === true) {
+          broadcastExcept(roomId, ws, { type: "cursor", id, gone: true });
+        } else if (Number.isFinite(msg.x) && Number.isFinite(msg.y)) {
+          broadcastExcept(roomId, ws, { type: "cursor", id, x: msg.x, y: msg.y });
+        }
+        return;
+      }
+
       if (msg.type !== "op") return;
 
       const result = applyOp(db, room, { type: msg.op?.type, payload: msg.op?.payload });
