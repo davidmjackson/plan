@@ -125,7 +125,8 @@ export function depBadges(state, storyId) {
  * kind is "tether" when both share a sprint (fromIndex === toIndex), else
  * "connector". fromIndex is the blocker's (do-first) sprint index, toIndex the
  * blocked's (dependent) index; the entry names blockerId/blockedId so the view
- * can place the arrowhead at the dependent end. violation === isViolation.
+ * can place the arrowhead at the depended-on (blocker) end (phase2-build2,
+ * reversed from Brief 8's dependent-end convention). violation === isViolation.
  * Pure and DOM-free: the view consumes this and only measures pixels.
  * @param {PlanState} state
  * @returns {Array<{ dep: Dep, blockerId: string, blockedId: string,
