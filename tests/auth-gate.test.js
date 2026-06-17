@@ -2,7 +2,7 @@
 // @ts-check
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideEntry } from "../public/js/auth-gate.js";
+import { decideEntry, sessionFromResponse } from "../public/js/auth-gate.js";
 
 test("a room link always takes the room path, whatever the session", () => {
   for (const session of ["authed", "anon", "no-auth-system", "error"]) {
@@ -32,4 +32,35 @@ test("no link + anon => redirect (locked down)", () => {
 });
 test("no link + whoami error => redirect (fail closed)", () => {
   assert.equal(decideEntry({ hasRoomLink: false, session: "error" }).mode, "redirect");
+});
+
+// --- sessionFromResponse: the whoami body classifier --------------------------
+// The real @suite/auth-client handleWhoami returns 200 with { authed: boolean }
+// for BOTH states (it is a "who am I" probe, not a 401 gate), so the body flag
+// is load-bearing. A 200 {authed:false} that fell through to "authed" was a
+// fail-open bug (the lockdown silently admitted anonymous visitors).
+test("200 {authed:false} (real anon shape) => anon", () => {
+  assert.equal(sessionFromResponse({ status: 200, type: "basic", body: { authed: false } }), "anon");
+});
+test("200 {authed:true} (real authed shape) => authed", () => {
+  assert.equal(sessionFromResponse({ status: 200, type: "basic", body: { authed: true } }), "authed");
+});
+test("200 with no recognised flag => anon (fail closed)", () => {
+  assert.equal(sessionFromResponse({ status: 200, type: "basic", body: {} }), "anon");
+});
+test("404 => no-auth-system (dev/stub, no routes mounted)", () => {
+  assert.equal(sessionFromResponse({ status: 404, type: "basic", body: {} }), "no-auth-system");
+});
+test("401 => anon", () => {
+  assert.equal(sessionFromResponse({ status: 401, type: "basic", body: {} }), "anon");
+});
+test("opaqueredirect (cross-origin 302 to hub login) => anon", () => {
+  assert.equal(sessionFromResponse({ status: 0, type: "opaqueredirect", body: {} }), "anon");
+});
+test("5xx => error (fail closed via decideEntry)", () => {
+  assert.equal(sessionFromResponse({ status: 502, type: "basic", body: {} }), "error");
+});
+test("defensive: 200 {authenticated:true} / {userId} still => authed", () => {
+  assert.equal(sessionFromResponse({ status: 200, type: "basic", body: { authenticated: true } }), "authed");
+  assert.equal(sessionFromResponse({ status: 200, type: "basic", body: { userId: "u1" } }), "authed");
 });
