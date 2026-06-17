@@ -37,6 +37,7 @@ import { openResumePrompt, openInvalidPrompt } from "./resume-prompt.js";
 import { singleLineTitle } from "./validate.js";
 import { decideEntry, fetchSession } from "./auth-gate.js";
 import { launchUrl } from "./suite-urls.js";
+import { wireLogout } from "./logout.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -538,6 +539,11 @@ if (collabBtn) {
     wireCollaborate({ button: collabBtn, getPlan: () => store.getState(), flash });
   }
 }
+
+// Phase 3: the Log out button. Behaviour branches on whether this browser holds
+// a real suite session (set by the entry gate), NOT on room vs single-user — a
+// suite user in a room still logs out to the dashboard.
+wireLogout({ button: document.getElementById("tb-logout"), hasSuiteSession: HAS_SUITE_SESSION });
 
 // #10: in a room, give the board a live-room header treatment — the band eyebrow
 // reads as a live room, the plan title BECOMES the room name (editable and synced
