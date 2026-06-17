@@ -2,7 +2,7 @@
 
 A lightweight whiteboard that shows what your team can realistically deliver in the next 1-3 months, sprint by sprint, against your backlog.
 
-Part of the [Sprint Suite](https://sprintsuite.uk): [Sprintpoker](https://sprintpoker.uk) · [Sprintretro](https://sprintretro.uk) · [Sprintsignal](https://sprintsignal.uk) · [Sprintraid](https://sprintraid.uk) · Sprintplan (this app). A free, sign-in-free planning board you can also reach from the suite landing.
+Part of the [Sprint Suite](https://sprintsuite.uk): [Sprintpoker](https://sprintpoker.uk) · [Sprintretro](https://sprintretro.uk) · [Sprintsignal](https://sprintsignal.uk) · [Sprintraid](https://sprintraid.uk) · Sprintplan (this app). A planning board reached through the Sprint Suite.
 
 ## What it does
 
@@ -11,15 +11,15 @@ Part of the [Sprint Suite](https://sprintsuite.uk): [Sprintpoker](https://sprint
 - Drag stories into sprint containers and watch capacity update live
 - Over-committed sprints are flagged instantly (amber within 10% over, red beyond), never blocked
 - Export a plan summary as markdown, printable HTML, or CSV, including an over-commitment section so the risk is on the record
-- Everything runs client-side: no account, no server, your data stays in your browser (local storage + JSON export/import)
+- Your single-user plan runs client-side: your data stays in your browser (local storage + JSON export/import). Access is through the Sprint Suite.
 
 ## What it deliberately is not
 
-No rooms, chat, or video (Teams owns that). No Jira sync in v1 (import is on the roadmap). No accounts. Not a SAFe ceremony suite. It is a planning visualisation, with a delivery manager's opinion baked in: it will not stop you over-committing, but it will not let it hide either.
+No chat or video (Teams owns that). No Jira sync in v1 (import is on the roadmap). Not a SAFe ceremony suite. It is a planning visualisation, with a delivery manager's opinion baked in: it will not stop you over-committing, but it will not let it hide either.
 
 ## Status
 
-**Live.** sprintplan.uk is deployed and in production over HTTPS. The MVP (briefs 1-10) shipped, and a later phase added optional real-time multiplayer rooms (live cursors, presence, shared editing). Visiting sprintplan.uk directly stays the free, sign-in-free single-user board; collaboration is launched from the [Sprint Suite](https://sprintsuite.uk) hub and requires an account. See [docs/sprintplan-mvp-spec.md](docs/sprintplan-mvp-spec.md) for the locked scope.
+**Live.** sprintplan.uk is deployed and in production over HTTPS. Access is through the Sprint Suite: open plan from the hub to use the single-user board, or join a colleague's shared room link to collaborate live (real-time cursors, presence, shared editing). See [docs/sprintplan-mvp-spec.md](docs/sprintplan-mvp-spec.md) for the locked scope.
 
 ## AI-Directed Engineering
 
