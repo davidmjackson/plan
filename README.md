@@ -19,7 +19,7 @@ No rooms, chat, or video (Teams owns that). No Jira sync in v1 (import is on the
 
 ## Status
 
-Pre-MVP, in active build. See [docs/sprintplan-mvp-spec.md](docs/sprintplan-mvp-spec.md) for the locked scope.
+**Live.** sprintplan.uk is deployed and in production over HTTPS. The MVP (briefs 1-10) shipped, and a later phase added optional real-time multiplayer rooms (live cursors, presence, shared editing). Visiting sprintplan.uk directly stays the free, sign-in-free single-user board; collaboration is launched from the [Sprint Suite](https://sprintsuite.uk) hub and requires an account. See [docs/sprintplan-mvp-spec.md](docs/sprintplan-mvp-spec.md) for the locked scope.
 
 ## AI-Directed Engineering
 
