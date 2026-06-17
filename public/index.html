@@ -9,6 +9,12 @@
     <link rel="stylesheet" href="/css/plan.css" />
   </head>
   <body class="ins plan-page" data-app="plan">
+    <!-- Phase 3 boot overlay: covers the page until the entry gate decides, so
+         the board never flashes before a redirect. Removed by main.js when we
+         stay; left in place (and navigated past) on a redirect. -->
+    <div id="boot-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0b0f14;color:#cfd8e3;font:500 15px system-ui,-apple-system,sans-serif">
+      Checking your session…
+    </div>
     <header class="topbar">
       <span class="topbar-lead">
         <p class="brand">

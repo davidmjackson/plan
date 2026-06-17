@@ -35,6 +35,8 @@ import { setupDrag, isDragging } from "./drag.js";
 import { dismissBanner, clearDismissedBanners } from "./banner.js";
 import { openResumePrompt, openInvalidPrompt } from "./resume-prompt.js";
 import { singleLineTitle } from "./validate.js";
+import { decideEntry, fetchSession } from "./auth-gate.js";
+import { launchUrl } from "./suite-urls.js";
 
 const STORAGE_KEY = "sprintplan:board";
 
@@ -127,6 +129,19 @@ function classifySave() {
 const roomParams = new URLSearchParams(location.search);
 const ROOM_ID = roomParams.get("room");
 const IN_ROOM = ROOM_ID != null && ROOM_ID !== "";
+
+// --- Phase 3 entry gate (suite-gated access) -------------------------------
+// Before anything renders: a room link bypasses (server enforces the token);
+// otherwise require a suite session or redirect out to the suite. The overlay
+// in index.html covers the page until we know we're staying.
+const sessionStatus = await fetchSession();
+const entry = decideEntry({ hasRoomLink: IN_ROOM, session: sessionStatus });
+if (entry.mode === "redirect") {
+  location.replace(launchUrl());
+  await new Promise(() => {}); // halt the module: the navigation is in flight
+}
+document.getElementById("boot-overlay")?.remove(); // staying — reveal the app
+const HAS_SUITE_SESSION = entry.hasSuiteSession;
 
 /** Translate a server nack reason into a user-facing toast line. */
 function roomNackMessage(/** @type {string} */ reason) {
