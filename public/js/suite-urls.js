@@ -8,14 +8,10 @@
  */
 const SUITE_ORIGIN = "https://sprintsuite.uk";
 
-/** Suite landing page — where a logged-out GUEST is sent. */
+/** Suite landing page — where every logged-out user is sent (suite user and
+ * guest alike; the guest just sees a modal first). */
 export function landingUrl() {
   return SUITE_ORIGIN + "/";
-}
-
-/** Suite hub dashboard — where a logged-out SUITE USER is sent. */
-export function dashboardUrl() {
-  return SUITE_ORIGIN + "/dashboard";
 }
 
 /** Where an unauthenticated direct visitor is redirected to launch plan. The
