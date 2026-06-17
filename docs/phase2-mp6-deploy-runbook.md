@@ -21,11 +21,11 @@ mkdir -p /var/www/plan/data
 Back it up with the box's existing backup job (it is a single SQLite file, e.g. `/var/www/plan/data/rooms.db`). It is created on first start.
 
 ## 3. Make @suite/auth-client resolvable (deploy-time dep)
-It is intentionally NOT in package.json (would break `npm ci` where suite is absent). On the live box, where `/var/www/suite` exists, make it resolvable — match how the siblings do it (a `file:` install, a vendored copy, or a path link):
+It is intentionally NOT in package.json: it is a private suite package and this repo is public, so committing it (or a `file:` path) would expose private auth code or break `npm ci` for public clones/CI. CI and public clones run the STUB provider and never import it — only the live box needs it. Run the committed helper, which installs it `--no-save` from the suite sibling and verifies it resolves:
 ```bash
-npm --prefix /var/www/plan install /var/www/suite/shared/auth-client
+/var/www/plan/bin/install-auth-client.sh
 ```
-(Or vendor a copy, per the dragula precedent.) Confirm `node -e "import('@suite/auth-client').then(m=>console.log(typeof m.createAuthClient))"` prints `function` from `/var/www/plan`.
+**Re-run this after every `npm ci`** — a plain `npm ci` silently drops the `--no-save` package and breaks the real auth provider. (Override the source path with `SUITE_AUTH_CLIENT=...` if the suite repo lives elsewhere.)
 
 ## 4. Env file (secrets — NOT committed)
 Write `/var/www/plan/.env.rooms` (referenced by the systemd unit):
