@@ -32,13 +32,34 @@ export function decideEntry({ hasRoomLink, session }) {
 }
 
 /**
+ * Pure classifier for a /auth/whoami response. Split out so the body-shape
+ * logic is unit-tested without a live fetch.
+ *
+ * The real @suite/auth-client handleWhoami returns 200 with `{ authed: boolean }`
+ * for BOTH states (it is a "who am I" probe, not a 401 gate) — verified on prod
+ * 2026-06-17 — so the body flag is load-bearing. 404 = no auth routes mounted
+ * (dev/stub). 401 / status 0 / opaqueredirect = a cross-origin 302→hub-login.
+ * A 2xx with no recognised flag fails CLOSED (anon), so the gate never admits a
+ * visitor it cannot positively confirm.
+ * @param {{ status: number, type?: string, body?: any }} res
+ * @returns {"authed"|"anon"|"no-auth-system"|"error"}
+ */
+export function sessionFromResponse({ status, type, body }) {
+  if (status === 404) return "no-auth-system";
+  if (status === 401 || status === 0 || type === "opaqueredirect") return "anon";
+  if (status < 200 || status >= 300) return "error";
+  const b = body || {};
+  if (typeof b.authed === "boolean") return b.authed ? "authed" : "anon";
+  if (typeof b.authenticated === "boolean") return b.authenticated ? "authed" : "anon";
+  if (typeof b.loggedIn === "boolean") return b.loggedIn ? "authed" : "anon";
+  if (b.userId != null) return "authed";
+  return "anon"; // 2xx with no recognised flag: fail closed.
+}
+
+/**
  * Ask the server who we are. `redirect:"manual"` so the real auth-client's
  * 302→hub-login surfaces as an opaqueredirect (status 0) rather than fetch
- * following it cross-origin. 404 = no auth routes mounted = dev/stub.
- *
- * VERIFY-STEP (Task 7): confirm the real handleWhoami's 2xx body shape. This
- * adapter assumes a 2xx with an explicit boolean flag (authenticated/loggedIn)
- * or a userId; absent any flag on a 2xx it assumes authed.
+ * following it cross-origin. Classification is delegated to sessionFromResponse.
  * @returns {Promise<"authed"|"anon"|"no-auth-system"|"error">}
  */
 export async function fetchSession() {
@@ -48,13 +69,9 @@ export async function fetchSession() {
   } catch {
     return "error";
   }
-  if (res.status === 404) return "no-auth-system";
-  if (res.status === 401 || res.status === 0 || res.type === "opaqueredirect") return "anon";
-  if (!res.ok) return "error";
   let body = /** @type {any} */ ({});
-  try { body = await res.json(); } catch { /* non-JSON 2xx: fall through to authed */ }
-  if (typeof body.authenticated === "boolean") return body.authenticated ? "authed" : "anon";
-  if (typeof body.loggedIn === "boolean") return body.loggedIn ? "authed" : "anon";
-  if (body.userId != null) return "authed";
-  return "authed";
+  if (res.ok) {
+    try { body = await res.json(); } catch { /* non-JSON 2xx: classifier fails closed */ }
+  }
+  return sessionFromResponse({ status: res.status, type: res.type, body });
 }
