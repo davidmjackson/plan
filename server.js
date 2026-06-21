@@ -7,6 +7,7 @@ import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.disable("x-powered-by");
 const PORT = process.env.PORT || 3004;
 
 app.use(express.static(join(__dirname, "public")));

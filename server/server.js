@@ -21,6 +21,7 @@ import express from "express";
 import { WebSocketServer } from "ws";
 
 import { loadRoom, createRoom } from "./db.js";
+import { makeSecurityHeaders } from "./middleware/securityHeaders.js";
 import { applyOp } from "./rooms.js";
 import { createAuthProvider } from "./auth.js";
 import { createInitialState } from "../public/js/store.js";
@@ -79,6 +80,10 @@ export async function startSpikeServer({ db, port = 0, serveStatic = false, seed
   // authed room-creation endpoint; static serving is opt-in. The ws upgrade is
   // handled separately on the http server, independent of express routing.
   const app = express();
+  app.disable("x-powered-by");
+  // Security headers FIRST, so they cover static assets, error responses, and the
+  // ws-upgrade origin. Mirrors the suite hub. See ./middleware/securityHeaders.js.
+  app.use(makeSecurityHeaders());
   app.use(express.json());
 
   // Liveness (MP6 R5): unauthed, cheap — for systemd/monitoring.
